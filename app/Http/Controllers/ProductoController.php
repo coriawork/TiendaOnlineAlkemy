@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\producto;
+use App\Models\categoria;
+use App\Http\Requests\ProductoRequest;
 
 class ProductoController extends Controller
 {
@@ -13,26 +15,29 @@ class ProductoController extends Controller
             ->latest()
             ->paginate(10);
 
-        return response()->json($productos);
+        return view('productos', compact('productos'));
+    }
+    public function create()
+    {
+        $categorias = categoria::all();
+        return view('productoCrear', compact('categorias'));
     }
 
-    public function store(Request $request)
+    public function store(ProductoRequest $request)
     {
-        $validated = $request->validate([
-            'categoria_id' => ['required', 'integer', 'exists:categorias,id'],
-            'nombre' => ['required', 'string', 'max:255'],
-            'descripcion' => ['nullable', 'string'],
-            'precio' => ['required', 'numeric', 'min:0'],
-            'stock' => ['required', 'integer', 'min:0'],
-            'imagen' => ['nullable', 'string', 'max:255'],
+
+        Producto::create([
+            'categoria_id' => $request->categoria_id,
+            'nombre' => $request->nombre,
+            'descripcion' => $request->descripcion,
+            'precio' => $request->precio,
+            'stock' => $request->stock,
         ]);
 
-        $producto = producto::create($validated);
-
-        return response()->json([
-            'message' => 'Producto creado correctamente.',
-            'producto' => $producto->load('categoria'),
-        ], 201);
+        return view('productos', [
+            'productos' => producto::with('categoria')->latest()->paginate(10),
+            'message' => ["message" => 'Producto creado correctamente.', "type" => "success"],
+        ]);
     }
 
     public function show(producto $producto)
@@ -41,23 +46,27 @@ class ProductoController extends Controller
             $producto->load(['categoria', 'carritos'])
         );
     }
+    
+    public function edit(producto $producto)
+    {
+        $categorias = categoria::all();
+        return view('productoEditar', compact('producto', 'categorias'));
+    }
 
     public function update(Request $request, producto $producto)
     {
-        $validated = $request->validate([
-            'categoria_id' => ['required', 'integer', 'exists:categorias,id'],
-            'nombre' => ['required', 'string', 'max:255'],
-            'descripcion' => ['nullable', 'string'],
-            'precio' => ['required', 'numeric', 'min:0'],
-            'stock' => ['required', 'integer', 'min:0'],
-            'imagen' => ['nullable', 'string', 'max:255'],
+        $producto->update([
+            'categoria_id' => $request->categoria_id,
+            'nombre' => $request->nombre,
+            'descripcion' => $request->descripcion,
+            'precio' => $request->precio,
+            'stock' => $request->stock,
         ]);
 
-        $producto->update($validated);
 
-        return response()->json([
-            'message' => 'Producto actualizado correctamente.',
-            'producto' => $producto->fresh()->load('categoria'),
+        return view('productos', [
+            'productos' => producto::with('categoria')->latest()->paginate(10),
+            'message' => ["message" => 'Producto actualizado correctamente.', "type" => "success"],
         ]);
     }
 
@@ -65,8 +74,9 @@ class ProductoController extends Controller
     {
         $producto->delete();
 
-        return response()->json([
-            'message' => 'Producto eliminado correctamente.',
+        return view('productos', [
+            'productos' => producto::with('categoria')->latest()->paginate(10),
+            'message' => ["message" => 'Producto eliminado correctamente.', "type" => "success"],
         ]);
     }
 }
