@@ -32,8 +32,8 @@ class producto extends Model
         return $this->belongsTo(categoria::class, 'categoria_id');
     }
 
-    public function carritos(): HasMany
+    public function items(): HasMany
     {
-        return $this->hasMany(carrito::class, 'producto_id');
+        return $this->hasMany(item::class, 'producto_id');
     }
 }

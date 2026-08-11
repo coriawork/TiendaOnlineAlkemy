@@ -4,15 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\Relations\HasMany;
 class carrito extends Model
 {
     protected $table = 'carritos';
-
-    protected $fillable = [
-        'usuario_id',
-        'producto_id',
-        'cantidad',
+    
+    protected $fillable = [ 
+        'usuario_id',   
+        'cantidad', 
         'precio_unitario',
     ];
 
@@ -29,8 +28,9 @@ class carrito extends Model
         return $this->belongsTo(usuario::class, 'usuario_id');
     }
 
-    public function producto(): BelongsTo
+    public function items(): HasMany
     {
-        return $this->belongsTo(producto::class, 'producto_id');
+        return $this->hasMany(item::class, 'carrito_id');
     }
+
 }
