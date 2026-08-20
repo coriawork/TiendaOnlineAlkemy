@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
 
-class categoria extends Model
+class Categoria extends Model
 {
     protected $table = 'categorias';
 

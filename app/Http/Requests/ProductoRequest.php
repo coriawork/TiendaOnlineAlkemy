@@ -28,7 +28,6 @@ class ProductoRequest extends FormRequest
             'descripcion' => 'nullable|string',
             'precio' => ['required','numeric','min:0',new PrecioValido()],
             'stock' => 'required|integer|min:0',
-
         ];
     }
 }
