@@ -26,9 +26,9 @@ class ProductoRequest extends FormRequest
             'categoria_id' => 'required|exists:categorias,id',
             'nombre' => 'required|string|max:100',
             'descripcion' => 'nullable|string',
-            'precio' => 'required|numeric|min:0',
+            'precio' => ['required','numeric','min:0',new PrecioValido()],
             'stock' => 'required|integer|min:0',
-            new PrecioValido,
+
         ];
     }
 }
