@@ -22,9 +22,10 @@ class ItemController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
+            'cantidad' => 'required|integer|min:1',
+            'precio_unitario' => 'required|numeric|min:0',
+            'carrito_id' => 'required|exists:carritos,id',
+            'producto_id' => 'required|exists:productos,id',
         ]);
 
         $item = Item::create($request->all());
@@ -47,9 +48,8 @@ class ItemController extends Controller
     public function update(Request $request, Item $item)
     {
         $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'sometimes|required|numeric|min:0',
+            'cantidad' => 'sometimes|required|integer|min:1',
+            'precio_unitario' => 'sometimes|required|numeric|min:0',
         ]);
 
         $item->update($request->all());
