@@ -1,0 +1,941 @@
+{
+    "info": {
+        "name": "E-commerce API (Carrito y Compras)",
+        "description": "Colección para probar el flujo completo de la API: categorías, productos, usuarios, carritos, items y compras.\n\nVariables incluidas: base_url y los ids que se van generando a medida que se corren las requests (categoria_id, producto_id, producto_sin_stock_id, usuario_id, usuario2_id, carrito_id, item_id, compra_id).\n\nOrden sugerido: Categorías → Productos → Usuarios → Carritos → Items → Compras.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:8000/api",
+            "type": "string"
+        },
+        {
+            "key": "categoria_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "producto_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "producto_sin_stock_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "usuario_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "usuario2_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "carrito_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "item_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "compra_id",
+            "value": "",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "Categorías",
+            "item": [
+                {
+                    "name": "Listar categorías",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/categorias",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "categorias"
+                            ]
+                        },
+                        "description": "Devuelve el listado completo de categorías."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Crear categoría",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const json = pm.response.json();",
+                                    "    pm.collectionVariables.set('categoria_id', json.id);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Electrónica\",\n  \"descripcion\": \"Dispositivos y gadgets\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/categorias",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "categorias"
+                            ]
+                        },
+                        "description": "Crea una nueva categoría."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Ver categoría",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/categorias/{{categoria_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "categorias",
+                                "{{categoria_id}}"
+                            ]
+                        },
+                        "description": "Devuelve el detalle de una categoría."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Actualizar categoría",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Electrónica y computación\",\n  \"descripcion\": \"Dispositivos, gadgets y accesorios de PC\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/categorias/{{categoria_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "categorias",
+                                "{{categoria_id}}"
+                            ]
+                        },
+                        "description": "Actualiza los datos de una categoría existente."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Eliminar categoría",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/categorias/{{categoria_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "categorias",
+                                "{{categoria_id}}"
+                            ]
+                        },
+                        "description": "Elimina una categoría."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Productos",
+            "item": [
+                {
+                    "name": "Listar productos",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/productos",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "productos"
+                            ]
+                        },
+                        "description": "Devuelve el listado de productos junto con su categoría."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Crear producto (con stock)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "description": "Crea un nuevo producto asociado a una categoría, con stock disponible.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"categoria_id\": {{categoria_id}},\n  \"nombre\": \"Mouse inalámbrico\",\n  \"descripcion\": \"Mouse óptico inalámbrico\",\n  \"precio\": 5000.00,\n  \"stock\": 20\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/productos",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "productos"
+                            ]
+                        }
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "if (pm.response.code === 200 || pm.response.code === 201) {",
+                                    "    const json = pm.response.json();",
+                                    "    const producto = json.id ? json : (json.producto || json.data);",
+                                    "    if (producto && producto.id) {",
+                                    "        pm.collectionVariables.set('producto_id', producto.id);",
+                                    "    }",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Crear producto (sin stock, para validaciones)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "description": "Crea un producto sin stock disponible, para probar las validaciones al agregarlo a un carrito o comprarlo.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"categoria_id\": {{categoria_id}},\n  \"nombre\": \"Ventilador de pie\",\n  \"descripcion\": \"Producto sin stock, para probar validaciones\",\n  \"precio\": 20000.00,\n  \"stock\": 0\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/productos",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "productos"
+                            ]
+                        }
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "if (pm.response.code === 200 || pm.response.code === 201) {",
+                                    "    const json = pm.response.json();",
+                                    "    const producto = json.id ? json : (json.producto || json.data);",
+                                    "    if (producto && producto.id) {",
+                                    "        pm.collectionVariables.set('producto_sin_stock_id', producto.id);",
+                                    "    }",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Ver producto",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "description": "Devuelve el detalle de un producto junto con su categoría.",
+                        "url": {
+                            "raw": "{{base_url}}/productos/{{producto_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "productos",
+                                "{{producto_id}}"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Actualizar producto",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"categoria_id\": {{categoria_id}},\n  \"nombre\": \"Mouse inalámbrico Pro\",\n  \"descripcion\": \"Mouse óptico inalámbrico, edición Pro\",\n  \"precio\": 5500.00,\n  \"stock\": 18\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/productos/{{producto_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "productos",
+                                "{{producto_id}}"
+                            ]
+                        },
+                        "description": "Actualiza los datos de un producto existente."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Eliminar producto",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/productos/{{producto_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "productos",
+                                "{{producto_id}}"
+                            ]
+                        },
+                        "description": "Elimina un producto."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Usuarios",
+            "item": [
+                {
+                    "name": "Listar usuarios",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/usuarios",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios"
+                            ]
+                        },
+                        "description": "Devuelve el listado de usuarios."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Crear usuario 1 (Juan)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const json = pm.response.json();",
+                                    "    pm.collectionVariables.set('usuario_id', json.id);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "description": "Crea un nuevo usuario.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Juan Pérez\",\n  \"correo\": \"juan@test.com\",\n  \"password\": \"password123\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/usuarios",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Crear usuario 2 (María, carrito vacío)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const json = pm.response.json();",
+                                    "    pm.collectionVariables.set('usuario2_id', json.id);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"María Gómez\",\n  \"correo\": \"maria@test.com\",\n  \"password\": \"password123\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/usuarios",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios"
+                            ]
+                        },
+                        "description": "Crea un segundo usuario, útil para probar el flujo con un carrito vacío."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Ver usuario",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/usuarios/{{usuario_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios",
+                                "{{usuario_id}}"
+                            ]
+                        },
+                        "description": "Devuelve el detalle de un usuario."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Actualizar usuario",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Juan Pérez López\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/usuarios/{{usuario_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios",
+                                "{{usuario_id}}"
+                            ]
+                        },
+                        "description": "Actualiza los datos de un usuario existente."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Eliminar usuario",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/usuarios/{{usuario_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios",
+                                "{{usuario_id}}"
+                            ]
+                        },
+                        "description": "Elimina un usuario."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Carritos",
+            "item": [
+                {
+                    "name": "Listar carritos",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    const json = pm.response.json();",
+                                    "    const carritos = Array.isArray(json) ? json : (json.data || []);",
+                                    "    const usuarioId = pm.collectionVariables.get('usuario_id');",
+                                    "    const match = carritos.find(c => String(c.usuario_id) === String(usuarioId));",
+                                    "    if (match) {",
+                                    "        pm.collectionVariables.set('carrito_id', match.id);",
+                                    "    }",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "description": "Devuelve el listado de carritos.",
+                        "url": {
+                            "raw": "{{base_url}}/carritos",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "carritos"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Ver carrito",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/carritos/{{carrito_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "carritos",
+                                "{{carrito_id}}"
+                            ]
+                        },
+                        "description": "Devuelve el detalle de un carrito."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Vaciar carrito",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/carritos/{{carrito_id}}/empty",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "carritos",
+                                "{{carrito_id}}",
+                                "empty"
+                            ]
+                        },
+                        "description": "Elimina todos los items del carrito y reinicia su total."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Items",
+            "item": [
+                {
+                    "name": "Listar items",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/items",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "items"
+                            ]
+                        },
+                        "description": "Devuelve el listado de items."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Agregar item al carrito",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const json = pm.response.json();",
+                                    "    pm.collectionVariables.set('item_id', json.id);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "description": "Agrega un producto al carrito indicado, con la cantidad especificada.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"carrito_id\": {{carrito_id}},\n  \"producto_id\": {{producto_id}},\n  \"cantidad\": 2\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/items",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "items"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Agregar item sin stock suficiente (debe fallar con 400)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"carrito_id\": {{carrito_id}},\n  \"producto_id\": {{producto_sin_stock_id}},\n  \"cantidad\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/items",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "items"
+                            ]
+                        },
+                        "description": "Intenta agregar una cantidad mayor a la disponible en stock; la API debe responder con un error 400."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Ver item",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/items/{{item_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "items",
+                                "{{item_id}}"
+                            ]
+                        },
+                        "description": "Devuelve el detalle de un item."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Actualizar item (cantidad)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"cantidad\": 3\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/items/{{item_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "items",
+                                "{{item_id}}"
+                            ]
+                        },
+                        "description": "Actualiza la cantidad de un item existente."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Eliminar item del carrito",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/items/{{item_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "items",
+                                "{{item_id}}"
+                            ]
+                        },
+                        "description": "Elimina un item del carrito."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Compras",
+            "item": [
+                {
+                    "name": "Listar compras",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/compras",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "compras"
+                            ]
+                        },
+                        "description": "Devuelve el listado de compras."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Ver compras de un usuario",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/compras/{{usuario_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "compras",
+                                "{{usuario_id}}"
+                            ]
+                        },
+                        "description": "Devuelve las compras realizadas por un usuario."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Checkout del carrito",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "description": "Genera las compras a partir de los items del carrito del usuario indicado.",
+                        "url": {
+                            "raw": "{{base_url}}/compras/{{usuario_id}}/checkout",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "compras",
+                                "{{usuario_id}}",
+                                "checkout"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Actualizar compra",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"total\": 10000.00\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/compras/{{compra_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "compras",
+                                "{{compra_id}}"
+                            ]
+                        },
+                        "description": "Actualiza los datos de una compra existente."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Eliminar compra",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/compras/{{compra_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "compras",
+                                "{{compra_id}}"
+                            ]
+                        },
+                        "description": "Elimina una compra."
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ]
+}

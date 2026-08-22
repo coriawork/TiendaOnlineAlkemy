@@ -11,17 +11,8 @@ class Carrito extends Model
     
     protected $fillable = [ 
         'usuario_id',   
-        'cantidad', 
-        'precio_unitario',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'cantidad' => 'integer',
-            'precio_unitario' => 'decimal:2',
-        ];
-    }
 
     public function usuario(): BelongsTo
     {

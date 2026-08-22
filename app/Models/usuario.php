@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
 
-class usuario extends Model
+class Usuario extends Model
 {
     protected $table = 'usuarios';
 
@@ -19,8 +19,13 @@ class usuario extends Model
         'password',
     ];
 
+
     public function carritos(): HasMany
     {
-        return $this->hasMany(carrito::class, 'usuario_id');
+        return $this->hasMany(Carrito::class, 'usuario_id');
+    }
+    public function compras(): HasMany
+    {
+        return $this->hasMany(Compra::class, 'usuario_id');
     }
 }

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Item;
+use App\Models\Producto;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ItemController extends Controller
 {
@@ -23,13 +25,13 @@ class ItemController extends Controller
     {
         $request->validate([
             'cantidad' => 'required|integer|min:1',
-            'precio_unitario' => 'required|numeric|min:0',
             'carrito_id' => 'required|exists:carritos,id',
             'producto_id' => 'required|exists:productos,id',
         ]);
-
+        if(Producto::find($request->producto_id)->stock < $request->cantidad){
+            return response()->json(['message' => 'No hay suficiente stock para el producto solicitado.'], 400);
+        }
         $item = Item::create($request->all());
-
         return response()->json($item, 201);
     }
 
@@ -61,7 +63,7 @@ class ItemController extends Controller
      * Remove the specified resource from storage.
      */
     public function destroy(Item $item)
-    {
+    {       
         $item->delete();
         return response()->json(null, 204);
     }

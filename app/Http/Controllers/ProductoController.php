@@ -15,12 +15,7 @@ class ProductoController extends Controller
             ->latest()
             ->paginate(10);
 
-        return view('productos', compact('productos'));
-    }
-    public function create()
-    {
-        $categorias = categoria::all();
-        return view('productoCrear', compact('categorias'));
+        return response()->json($productos);
     }
 
     public function store(ProductoRequest $request)
@@ -34,24 +29,18 @@ class ProductoController extends Controller
             'stock' => $request->stock,
         ]);
 
-        return view('productos', [
-            'productos' => producto::with('categoria')->latest()->paginate(10),
-            'message' => ["message" => 'Producto creado correctamente.', "type" => "success"],
-        ]);
+        return response()->json([
+            'message' => 'Producto creado correctamente.',
+        ], 201);
     }
 
     public function show(producto $producto)
     {
         return response()->json(
-            $producto->load(['categoria', 'carritos'])
+            $producto->load(['categoria'])
         );
     }
     
-    public function edit(producto $producto)
-    {
-        $categorias = categoria::all();
-        return view('productoEditar', compact('producto', 'categorias'));
-    }
 
     public function update(Request $request, producto $producto)
     {
@@ -64,19 +53,27 @@ class ProductoController extends Controller
         ]);
 
 
-        return view('productos', [
-            'productos' => producto::with('categoria')->latest()->paginate(10),
-            'message' => ["message" => 'Producto actualizado correctamente.', "type" => "success"],
+        return response()->json([
+            'message' => 'Producto actualizado correctamente.',
         ]);
+    }
+    public function restarStock(producto $producto, int $cantidad)
+    {
+        if ($producto->stock >= $cantidad) {
+            $producto->stock -= $cantidad;
+            $producto->save();
+            return response()->json(['message' => 'Stock actualizado correctamente.', 'nuevo_stock' => $producto->stock]);
+        } else {
+            return response()->json(['message' => 'No hay suficiente stock para restar la cantidad solicitada.'], 400);
+        }
     }
 
     public function destroy(producto $producto)
     {
         $producto->delete();
 
-        return view('productos', [
-            'productos' => producto::with('categoria')->latest()->paginate(10),
-            'message' => ["message" => 'Producto eliminado correctamente.', "type" => "success"],
+        return response()->json([
+            'message' => 'Producto eliminado correctamente.',
         ]);
     }
 }
