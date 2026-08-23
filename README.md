@@ -47,12 +47,17 @@ Mientras se desarrolla, se recomienda mantener `npm run dev` ejecutándose para 
 
 El proyecto utiliza **Laravel**, siguiendo una arquitectura basada en el patrón MVC (Model-View-Controller).
 
-* **Modelos:** representan los datos y la lógica relacionada con ellos.
-* **Controladores:** reciben las peticiones HTTP, utilizan los modelos y preparan la información necesaria para las vistas.
+* **Modelos:** representan los datos y la lógica relacionada con ellos (`Categoria`, `Producto`, `Usuario`, `Carrito`, `Item`, `Compra`).
+* **Controladores:** reciben las peticiones HTTP, utilizan los modelos y preparan la información necesaria para las vistas o para la respuesta JSON.
 * **Vistas:** utilizan Blade para generar el HTML que se muestra al usuario.
 * **Rutas:** definen las URLs disponibles y determinan qué controlador y método debe procesar cada petición.
 
-## Flujo general
+El proyecto expone dos flujos distintos:
+
+* **Flujo web** (`routes/web.php`): gestión de productos mediante vistas Blade.
+* **Flujo API** (`routes/api.php`): gestión de categorías, productos, usuarios, carritos, items y compras mediante respuestas JSON, pensado para el feature de carrito de compras.
+
+## Flujo general (vistas)
 
 1. El usuario realiza una petición a una URL de la aplicación.
 2. Laravel recibe la petición y busca una ruta que coincida.
@@ -63,6 +68,16 @@ El proyecto utiliza **Laravel**, siguiendo una arquitectura basada en el patrón
 7. Tailwind CSS proporciona los estilos utilizados por las vistas.
 
 Esto respeta el patrón MVC porque la vista se encarga de la presentación, mientras que el controlador coordina el flujo y el modelo se encarga de los datos.
+
+## Flujo general (API)
+
+1. El cliente (por ejemplo, Postman o un frontend) realiza una petición a una URL bajo `/api`.
+2. Laravel recibe la petición y busca una ruta que coincida dentro de `routes/api.php`.
+3. La ruta determina qué método del controlador correspondiente debe ejecutarse (`CategoriaController`, `ProductoController`, `UsuarioController`, `CarritoController`, `ItemController` o `CompraController`).
+4. El controlador utiliza el modelo correspondiente para consultar o modificar los datos.
+5. El controlador devuelve la respuesta directamente en formato JSON, sin pasar por una vista.
+
+Este flujo es el que se utiliza para agregar y quitar productos de un carrito, y para realizar la compra.
 
 # Rutas de productos
 
@@ -101,6 +116,74 @@ Las rutas disponibles son:
 | PUT    | `/productos/{producto}`        | Actualizar un producto         |
 | DELETE | `/productos/{producto}`        | Eliminar un producto           |
 
+# Rutas de la API
+
+Las rutas de la API se encuentran en `routes/api.php` y están disponibles bajo el prefijo `/api`.
+
+## Categorías
+
+| Método | URL                       | Acción                |
+| ------ | ------------------------- | ---------------------- |
+| GET    | `/api/categorias`         | Listar categorías       |
+| POST   | `/api/categorias`         | Crear una categoría     |
+| GET    | `/api/categorias/{categoria}` | Ver una categoría   |
+| PUT    | `/api/categorias/{categoria}` | Actualizar una categoría |
+| DELETE | `/api/categorias/{categoria}` | Eliminar una categoría |
+
+## Productos
+
+| Método | URL                          | Acción                |
+| ------ | ---------------------------- | ---------------------- |
+| GET    | `/api/productos`             | Listar productos        |
+| POST   | `/api/productos`             | Crear un producto       |
+| GET    | `/api/productos/{producto}`  | Ver un producto         |
+| PUT    | `/api/productos/{producto}`  | Actualizar un producto  |
+| DELETE | `/api/productos/{producto}`  | Eliminar un producto    |
+
+## Usuarios
+
+| Método | URL                        | Acción               |
+| ------ | -------------------------- | ---------------------- |
+| GET    | `/api/usuarios`            | Listar usuarios         |
+| POST   | `/api/usuarios`            | Crear un usuario        |
+| GET    | `/api/usuarios/{usuario}`  | Ver un usuario          |
+| PUT    | `/api/usuarios/{usuario}`  | Actualizar un usuario   |
+| DELETE | `/api/usuarios/{usuario}`  | Eliminar un usuario     |
+
+Al crear un usuario, se genera automáticamente su carrito de compras.
+
+## Carritos
+
+| Método | URL                              | Acción                 |
+| ------ | --------------------------------- | ----------------------- |
+| GET    | `/api/carritos`                   | Listar carritos           |
+| GET    | `/api/carritos/{carrito}`         | Ver un carrito             |
+| POST   | `/api/carritos/{carrito}/empty`   | Vaciar un carrito           |
+
+## Items
+
+Los items representan los productos agregados a un carrito.
+
+| Método | URL                    | Acción                    |
+| ------ | ----------------------- | -------------------------- |
+| GET    | `/api/items`             | Listar items                 |
+| POST   | `/api/items`             | Agregar un producto a un carrito |
+| GET    | `/api/items/{item}`      | Ver un item                  |
+| PUT    | `/api/items/{item}`      | Actualizar la cantidad de un item |
+| DELETE | `/api/items/{item}`      | Eliminar un item de un carrito |
+
+## Compras
+
+| Método | URL                                 | Acción                        |
+| ------ | ------------------------------------ | ------------------------------ |
+| GET    | `/api/compras`                       | Listar compras                    |
+| GET    | `/api/compras/{usuario}`             | Ver las compras de un usuario     |
+| POST   | `/api/compras/{usuario}/checkout`    | Realizar el checkout del carrito de un usuario |
+| PUT    | `/api/compras/{compra}`              | Actualizar una compra              |
+| DELETE | `/api/compras/{compra}`              | Eliminar una compra                |
+
+El checkout genera una compra por cada item del carrito del usuario, descuenta el stock de los productos correspondientes y elimina esos items del carrito.
+
 # Estructura de carpetas
 
 La estructura principal del proyecto sigue la estructura estándar de Laravel:
@@ -110,11 +193,18 @@ Alkemy/
 ├── app/
 │   ├── Http/
 │   │   └── Controllers/
+│   │       ├── CarritoController.php
+│   │       ├── CategoriaController.php
+│   │       ├── CompraController.php
+│   │       ├── Controller.php
+│   │       ├── ItemController.php
 │   │       ├── ProductoController.php
 │   │       └── UsuarioController.php
 │   └── Models/
 │       ├── Carrito.php
 │       ├── Categoria.php
+│       ├── Compra.php
+│       ├── Item.php
 │       ├── Producto.php
 │       └── Usuario.php
 ├── database/
@@ -130,6 +220,7 @@ Alkemy/
 │   └── views/
 │       └── productos/
 ├── routes/
+│   ├── api.php
 │   └── web.php
 ├── storage/
 ├── vendor/
@@ -150,7 +241,7 @@ Cada carpeta cumple el siguiente rol:
 * `resources/views/`: contiene las vistas Blade de la aplicación.
 * `resources/css/`: contiene los estilos CSS y la configuración de Tailwind.
 * `resources/js/`: contiene los recursos JavaScript.
-* `routes/`: contiene la definición de las rutas de la aplicación.
+* `routes/`: contiene la definición de las rutas de la aplicación. `web.php` define las rutas que devuelven vistas Blade, y `api.php` define las rutas que devuelven respuestas JSON.
 * `storage/`: contiene archivos generados por Laravel, logs y otros recursos.
 * `vendor/`: contiene las dependencias instaladas mediante Composer.
 * `.env`: contiene la configuración específica del entorno, como las credenciales de la base de datos.
@@ -186,6 +277,6 @@ npm run dev
 
 # Ejemplo de salida
 
-Al acceder a `/productos`, la aplicación muestra el listado de productos junto con la información correspondiente, como su categoría y precio.
+Al acceder a `/productos` desde el navegador, la aplicación muestra el listado de productos junto con la información correspondiente, como su categoría y precio. Desde esta sección también se pueden realizar las operaciones de creación, edición y eliminación de productos.
 
-Desde esta sección también se pueden realizar las operaciones de creación, edición y eliminación de productos mediante las rutas correspondientes.
+Al consumir las rutas bajo `/api`, la aplicación devuelve la información en formato JSON. Por ejemplo, al hacer `GET /api/productos` se obtiene el listado de productos junto con su categoría asociada.
