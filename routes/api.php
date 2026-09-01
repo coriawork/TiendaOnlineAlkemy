@@ -14,17 +14,21 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+// Rutas públicas: registro y login no requieren JWT porque generan el token para el cliente.
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 
-    Route::middleware('auth:api')->group(function () {
+    // Estas rutas sí requieren JWT válido para conocer el usuario autenticado y cerrar/renovar la sesión.
+    Route::middleware('jwt.auth')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/refresh', [AuthController::class, 'refresh']);
         Route::get('/me', [AuthController::class, 'me']);
     });
 });
 
+// Rutas protegidas del carrito y checkout.
+// jwt.auth valida el token recibido; jwt.cart.owner asegura que el recurso pertenezca al usuario autenticado.
 Route::middleware(['jwt.auth', 'jwt.cart.owner'])->group(function () {
     Route::prefix('items')->group(function () {
         Route::get('/', [ItemController::class, 'index']);
@@ -47,14 +51,6 @@ Route::middleware(['jwt.auth', 'jwt.cart.owner'])->group(function () {
         Route::get('/{usuario}', [CompraController::class, 'getComprasByUsuario']);
         Route::post('/{usuario}/checkout', [CompraController::class, 'checkout']);
     });
-});
-
-Route::prefix('items')->group(function () {
-    Route::get('/', [ItemController::class, 'index']);
-    Route::post('/', [ItemController::class, 'store']);
-    Route::get('/{carrito_id}/{producto_id}', [ItemController::class, 'show']);
-    Route::put('/{carrito_id}/{producto_id}', [ItemController::class, 'update']);
-    Route::delete('/{carrito_id}/{producto_id}', [ItemController::class, 'destroy']);
 });
 
 Route::prefix('usuarios')->group(function () {
