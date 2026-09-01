@@ -25,6 +25,30 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+Route::middleware(['jwt.auth', 'jwt.cart.owner'])->group(function () {
+    Route::prefix('items')->group(function () {
+        Route::get('/', [ItemController::class, 'index']);
+        Route::post('/', [ItemController::class, 'store']);
+        Route::get('/{carrito_id}/{producto_id}', [ItemController::class, 'show']);
+        Route::put('/{carrito_id}/{producto_id}', [ItemController::class, 'update']);
+        Route::delete('/{carrito_id}/{producto_id}', [ItemController::class, 'destroy']);
+    });
+
+    Route::prefix('carritos')->group(function () {
+        Route::get('/', [CarritoController::class, 'index']);
+        Route::get('/{carrito}', [CarritoController::class, 'show']);
+        Route::post('/{carrito}/empty', [CarritoController::class, 'empty']);
+    });
+
+    Route::prefix('compras')->group(function () {
+        Route::get('/', [CompraController::class, 'index']);
+        Route::put('/{compra}', [CompraController::class, 'update']);
+        Route::delete('/{compra}', [CompraController::class, 'destroy']);
+        Route::get('/{usuario}', [CompraController::class, 'getComprasByUsuario']);
+        Route::post('/{usuario}/checkout', [CompraController::class, 'checkout']);
+    });
+});
+
 Route::prefix('items')->group(function () {
     Route::get('/', [ItemController::class, 'index']);
     Route::post('/', [ItemController::class, 'store']);
@@ -49,22 +73,6 @@ Route::prefix('productos')->group(function () {
     Route::delete('/{producto}', [ProductoController::class, 'destroy']);
 });
 
-Route::prefix('carritos')->group(function () {
-    // Vacia el carrito
-    Route::get('/', [CarritoController::class, 'index']);
-    Route::get('/{carrito}', [CarritoController::class, 'show']);
-    Route::post('/{carrito}/empty', [CarritoController::class, 'empty']);
-});
-
-Route::prefix("compras")->group(function () {
-    Route::get('/', [CompraController::class, 'index']);
-    Route::put('/{compra}', [CompraController::class, 'update']);
-    Route::delete('/{compra}', [CompraController::class, 'destroy']);
-
-    Route::get('/{usuario}', [CompraController::class, 'getComprasByUsuario']);
-    // Endpoint para realizar el checkout del carrito de un usuario
-    Route::post('/{usuario}/checkout', [CompraController::class, 'checkout']);
-});
 
 Route::prefix('categorias')->group(function () {
     Route::get('/', [CategoriaController::class, 'index']);
