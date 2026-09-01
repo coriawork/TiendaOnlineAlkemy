@@ -60,10 +60,8 @@ class CarritoController extends Controller
      */
     public function empty(Carrito $carrito)
     {
-        $items = $carrito->items;
-        foreach ($items as $item) {
-            $item->delete();
-        }
+        Item::where('carrito_id', $carrito->id)->delete();
+
         return response()->json(['message' => 'Carrito vaciado correctamente.']);
     }
 

@@ -15,11 +15,10 @@ Route::get('/user', function (Request $request) {
 
 Route::prefix('items')->group(function () {
     Route::get('/', [ItemController::class, 'index']);
-    //Añade un item al carrito
     Route::post('/', [ItemController::class, 'store']);
-    Route::get('/{item}', [ItemController::class, 'show']);
-    Route::put('/{item}', [ItemController::class, 'update']);
-    Route::delete('/{item}', [ItemController::class, 'destroy']);
+    Route::get('/{carrito_id}/{producto_id}', [ItemController::class, 'show']);
+    Route::put('/{carrito_id}/{producto_id}', [ItemController::class, 'update']);
+    Route::delete('/{carrito_id}/{producto_id}', [ItemController::class, 'destroy']);
 });
 
 Route::prefix('usuarios')->group(function () {

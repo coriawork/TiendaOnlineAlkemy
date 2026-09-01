@@ -57,15 +57,21 @@ class ProductoController extends Controller
             'message' => 'Producto actualizado correctamente.',
         ]);
     }
-    public function restarStock(producto $producto, int $cantidad)
+    public function restarStock(producto|int $producto, int $cantidad)
     {
-        if ($producto->stock >= $cantidad) {
-            $producto->stock -= $cantidad;
-            $producto->save();
-            return response()->json(['message' => 'Stock actualizado correctamente.', 'nuevo_stock' => $producto->stock]);
-        } else {
+        $productoModel = $producto instanceof producto ? $producto : producto::findOrFail($producto);
+
+        if ($productoModel->stock < $cantidad) {
             return response()->json(['message' => 'No hay suficiente stock para restar la cantidad solicitada.'], 400);
         }
+
+        $productoModel->stock -= $cantidad;
+        $productoModel->save();
+
+        return response()->json([
+            'message' => 'Stock actualizado correctamente.',
+            'nuevo_stock' => $productoModel->stock,
+        ]);
     }
 
     public function destroy(producto $producto)

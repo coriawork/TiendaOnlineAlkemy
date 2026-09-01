@@ -9,12 +9,20 @@ use Illuminate\Support\Facades\DB;
 
 class ItemController extends Controller
 {
+    private function findItemByCompositeKey(int $carritoId, int $productoId): Item
+    {
+        return Item::where('carrito_id', $carritoId)
+            ->where('producto_id', $productoId)
+            ->firstOrFail();
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
         $items = Item::all();
+
         return response()->json($items);
     }
 
@@ -28,33 +36,53 @@ class ItemController extends Controller
             'carrito_id' => 'required|exists:carritos,id',
             'producto_id' => 'required|exists:productos,id',
         ]);
-        if(Producto::find($request->producto_id)->stock < $request->cantidad){
+
+        $producto = Producto::find($request->producto_id);
+
+        if (! $producto || $producto->stock < $request->cantidad) {
             return response()->json(['message' => 'No hay suficiente stock para el producto solicitado.'], 400);
         }
+
+        $item = Item::where('carrito_id', $request->carrito_id)
+            ->where('producto_id', $request->producto_id)
+            ->first();
+
+        if ($item) {
+            $item->cantidad += $request->cantidad;
+            $item->save();
+
+            return response()->json($item, 200);
+        }
+
         $item = Item::create($request->all());
+
         return response()->json($item, 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Item $item)
+    public function show(int $carrito_id, int $producto_id)
     {
+        $item = $this->findItemByCompositeKey($carrito_id, $producto_id);
+
         return response()->json($item);
     }
-
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Item $item)
+    public function update(Request $request, int $carrito_id, int $producto_id)
     {
         $request->validate([
             'cantidad' => 'sometimes|required|integer|min:1',
-            'precio_unitario' => 'sometimes|required|numeric|min:0',
         ]);
 
-        $item->update($request->all());
+        Item::where('carrito_id', $carrito_id)
+            ->where('producto_id', $producto_id)
+            ->update($request->only('cantidad'));
+
+        $item = $this->findItemByCompositeKey($carrito_id, $producto_id);
 
         return response()->json($item);
     }
@@ -62,9 +90,12 @@ class ItemController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Item $item)
-    {       
-        $item->delete();
+    public function destroy(int $carrito_id, int $producto_id)
+    {
+        Item::where('carrito_id', $carrito_id)
+            ->where('producto_id', $producto_id)
+            ->delete();
+
         return response()->json(null, 204);
     }
 }

@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\DTO\CheckoutRequestDTO;
+use App\DTO\CheckoutSummaryDTO;
 use App\Models\Compra;
-use Illuminate\Http\Request;
-use App\Http\Controllers\CarritoController;
-use App\Http\Controllers\ProductoController;
 use App\Models\Carrito;
 use App\Models\Producto;
 use App\Models\Usuario;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class CompraController extends Controller
@@ -19,9 +19,9 @@ class CompraController extends Controller
     public function index()
     {
         $compras = Compra::all();
+
         return response()->json($compras);
     }
-
 
     /**
      * Update the specified resource in storage.
@@ -44,36 +44,82 @@ class CompraController extends Controller
     public function destroy(Compra $compra)
     {
         $compra->delete();
+
         return response()->json(null, 204);
     }
 
-    public function checkout(Usuario $usuario)
-    {   
+    public function checkout(Request $request, Usuario $usuario)
+    {
+        $payload = CheckoutRequestDTO::fromRequest($request);
+
         $carrito = Carrito::where('usuario_id', $usuario->id)->first();
-        
-        //voy a recorrer los items del carrito y crear una compra por cada item
-        foreach ($carrito->items as $item) {
-            $producto = Producto::find($item->producto_id);
-            if ($producto->stock < $item->cantidad) {
-                continue; // Saltea este item si no hay suficiente stock
-            }
-            Compra::create([        
-                'usuario_id' => $carrito->usuario_id,
-                'producto_id' => $item->producto_id,
-                'total' => $item->cantidad * $producto->precio,
-                'cantidad' => $item->cantidad,
-                'precio_unitario' => $producto->precio,
-            ]);
-            new ProductoController()->restarStock($item->producto_id, $item->cantidad);
-            new ItemController()->destroy($item);
+
+        if (! $carrito) {
+            return response()->json(['message' => 'El usuario no tiene un carrito activo.'], 404);
         }
-        return response()->json(['message' => 'Checkout realizado con éxito para el carrito ID: ' . $carrito->id]);
+
+        $items = $carrito->items()->with('producto')->get();
+
+        if ($items->isEmpty()) {
+            return response()->json(['message' => 'El carrito está vacío.'], 400);
+        }
+
+        $subtotal = 0.0;
+
+        foreach ($items as $item) {
+            $producto = $item->producto;
+
+            if (! $producto || $producto->stock < $item->cantidad) {
+                return response()->json([
+                    'message' => 'No hay suficiente stock para completar el checkout.',
+                    'producto_id' => $item->producto_id,
+                ], 409);
+            }
+
+            $subtotal += (float) $item->cantidad * (float) $producto->precio;
+        }
+
+        $summary = new CheckoutSummaryDTO(
+            subtotal: $subtotal,
+            impuesto: (float) $payload->impuesto,
+            envio: (float) $payload->envio,
+            total: $subtotal + $payload->impuesto + $payload->envio,
+            metodoPago: $payload->metodoPago,
+            direccionEnvio: $payload->direccionEnvio,
+        );
+
+        DB::transaction(function () use ($items, $usuario, $carrito, $summary) {
+            foreach ($items as $item) {
+                $producto = $item->producto;
+
+                Compra::create([
+                    'usuario_id' => $usuario->id,
+                    'producto_id' => $item->producto_id,
+                    'cantidad' => $item->cantidad,
+                    'total' => $item->cantidad * $producto->precio,
+                    'subtotal' => $summary->subtotal,
+                    'impuesto' => $summary->impuesto,
+                    'envio' => $summary->envio,
+                    'precio_unitario' => $producto->precio,
+                    'metodo_pago' => $summary->metodoPago,
+                    'direccion_envio' => $summary->direccionEnvio,
+                    'estado' => 'completada',
+                ]);
+
+                $producto->decrement('stock', $item->cantidad);
+                $item->delete();
+            }
+
+            $carrito->delete();
+        });
+
+        return response()->json($summary->toArray());
     }
 
-    function getComprasByUsuario(Usuario $usuario)
+    public function getComprasByUsuario(Usuario $usuario)
     {
         $compras = Compra::where('usuario_id', $usuario->id)->get();
+
         return response()->json($compras);
     }
-
 }
