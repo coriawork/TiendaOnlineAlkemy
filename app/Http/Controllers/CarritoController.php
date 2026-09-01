@@ -39,7 +39,7 @@ class CarritoController extends Controller
         return response()->json($carrito);
     }
 
-    
+
     /**
      * Update the specified resource in storage.
      */
@@ -74,9 +74,5 @@ class CarritoController extends Controller
             $total += $cantidad * $producto;
         }
         return response()->json(['total' => $total]);
-
     }
-
-
 }
-

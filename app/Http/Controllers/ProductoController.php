@@ -40,7 +40,7 @@ class ProductoController extends Controller
             $producto->load(['categoria'])
         );
     }
-    
+
 
     public function update(Request $request, producto $producto)
     {

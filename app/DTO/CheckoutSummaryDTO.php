@@ -11,8 +11,7 @@ final class CheckoutSummaryDTO
         public readonly float $total,
         public readonly string $metodoPago,
         public readonly string $direccionEnvio,
-    ) {
-    }
+    ) {}
 
     public function toArray(): array
     {

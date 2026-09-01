@@ -11,8 +11,7 @@ final class CheckoutRequestDTO
         public readonly float $envio,
         public readonly string $metodoPago,
         public readonly string $direccionEnvio,
-    ) {
-    }
+    ) {}
 
     public static function fromRequest(Request $request): self
     {
