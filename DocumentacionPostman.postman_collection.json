@@ -11,6 +11,21 @@
             "type": "string"
         },
         {
+            "key": "jwt_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "correo",
+            "value": "juan@test.com",
+            "type": "string"
+        },
+        {
+            "key": "password",
+            "value": "password123",
+            "type": "string"
+        },
+        {
             "key": "categoria_id",
             "value": "",
             "type": "string"
@@ -52,6 +67,91 @@
         }
     ],
     "item": [
+        {
+            "name": "Autenticación JWT",
+            "item": [
+                {
+                    "name": "Iniciar sesión y guardar token",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    const json = pm.response.json();",
+                                    "    pm.collectionVariables.set('jwt_token', json.token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"correo\": \"{{correo}}\",\n  \"password\": \"{{password}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "login"
+                            ]
+                        },
+                        "description": "Inicia sesión y guarda automáticamente el JWT en la variable jwt_token. Ejecutar después de crear el usuario."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Consultar usuario autenticado",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{jwt_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/me",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "me"
+                            ]
+                        },
+                        "description": "Comprueba que el token guardado sea válido."
+                    },
+                    "response": []
+                }
+            ]
+        },
         {
             "name": "Categorías",
             "item": [
@@ -572,6 +672,16 @@
         },
         {
             "name": "Carritos",
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{jwt_token}}",
+                        "type": "string"
+                    }
+                ]
+            },
             "item": [
                 {
                     "name": "Listar carritos",
@@ -653,6 +763,16 @@
         },
         {
             "name": "Items",
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{jwt_token}}",
+                        "type": "string"
+                    }
+                ]
+            },
             "item": [
                 {
                     "name": "Listar items",
@@ -756,13 +876,14 @@
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{base_url}}/items/{{item_id}}",
+                            "raw": "{{base_url}}/items/{{carrito_id}}/{{producto_id}}",
                             "host": [
                                 "{{base_url}}"
                             ],
                             "path": [
                                 "items",
-                                "{{item_id}}"
+                                "{{carrito_id}}",
+                                "{{producto_id}}"
                             ]
                         },
                         "description": "Devuelve el detalle de un item."
@@ -789,13 +910,14 @@
                             }
                         },
                         "url": {
-                            "raw": "{{base_url}}/items/{{item_id}}",
+                            "raw": "{{base_url}}/items/{{carrito_id}}/{{producto_id}}",
                             "host": [
                                 "{{base_url}}"
                             ],
                             "path": [
                                 "items",
-                                "{{item_id}}"
+                                "{{carrito_id}}",
+                                "{{producto_id}}"
                             ]
                         },
                         "description": "Actualiza la cantidad de un item existente."
@@ -808,13 +930,14 @@
                         "method": "DELETE",
                         "header": [],
                         "url": {
-                            "raw": "{{base_url}}/items/{{item_id}}",
+                            "raw": "{{base_url}}/items/{{carrito_id}}/{{producto_id}}",
                             "host": [
                                 "{{base_url}}"
                             ],
                             "path": [
                                 "items",
-                                "{{item_id}}"
+                                "{{carrito_id}}",
+                                "{{producto_id}}"
                             ]
                         },
                         "description": "Elimina un item del carrito."
@@ -825,6 +948,16 @@
         },
         {
             "name": "Compras",
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{jwt_token}}",
+                        "type": "string"
+                    }
+                ]
+            },
             "item": [
                 {
                     "name": "Listar compras",
@@ -867,7 +1000,21 @@
                     "name": "Checkout del carrito",
                     "request": {
                         "method": "POST",
-                        "header": [],
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"metodo_pago\": \"tarjeta\",\n  \"direccion_envio\": \"Av. Siempre Viva 123\",\n  \"impuesto\": 1000,\n  \"envio\": 500\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
                         "description": "Genera las compras a partir de los items del carrito del usuario indicado.",
                         "url": {
                             "raw": "{{base_url}}/compras/{{usuario_id}}/checkout",
