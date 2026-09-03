@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Item;
 use App\Models\Producto;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ItemController extends Controller
 {
@@ -31,30 +30,30 @@ class ItemController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'cantidad' => 'required|integer|min:1',
             'carrito_id' => 'required|exists:carritos,id',
             'producto_id' => 'required|exists:productos,id',
         ]);
 
-        $producto = Producto::find($request->producto_id);
+        $producto = Producto::find($validated['producto_id']);
 
-        if (! $producto || $producto->stock < $request->cantidad) {
+        if (! $producto || $producto->stock < $validated['cantidad']) {
             return response()->json(['message' => 'No hay suficiente stock para el producto solicitado.'], 400);
         }
 
-        $item = Item::where('carrito_id', $request->carrito_id)
-            ->where('producto_id', $request->producto_id)
+        $item = Item::where('carrito_id', $validated['carrito_id'])
+            ->where('producto_id', $validated['producto_id'])
             ->first();
 
         if ($item) {
-            $item->cantidad += $request->cantidad;
+            $item->cantidad += $validated['cantidad'];
             $item->save();
 
             return response()->json($item, 200);
         }
 
-        $item = Item::create($request->all());
+        $item = Item::create($validated);
 
         return response()->json($item, 201);
     }

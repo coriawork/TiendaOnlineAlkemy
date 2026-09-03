@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Middleware\AutenticarJwtApi;
+use App\Http\Middleware\SeguridadApi;
+use App\Http\Middleware\VerificarPropietarioCarrito;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,9 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->appendToGroup('api', SeguridadApi::class);
+
         $middleware->alias([
-            'jwt.auth' => \App\Http\Middleware\AutenticarJwtApi::class,
-            'jwt.cart.owner' => \App\Http\Middleware\VerificarPropietarioCarrito::class,
+            'autenticar.jwt' => AutenticarJwtApi::class,
+            'jwt.cart.owner' => VerificarPropietarioCarrito::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

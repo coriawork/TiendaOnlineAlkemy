@@ -20,7 +20,7 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 
     // Estas rutas sí requieren JWT válido para conocer el usuario autenticado y cerrar/renovar la sesión.
-    Route::middleware('jwt.auth')->group(function () {
+    Route::middleware('autenticar.jwt')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/refresh', [AuthController::class, 'refresh']);
         Route::get('/me', [AuthController::class, 'me']);
@@ -28,8 +28,8 @@ Route::prefix('auth')->group(function () {
 });
 
 // Rutas protegidas del carrito y checkout.
-// jwt.auth valida el token recibido; jwt.cart.owner asegura que el recurso pertenezca al usuario autenticado.
-Route::middleware(['jwt.auth', 'jwt.cart.owner'])->group(function () {
+// autenticar.jwt valida el token recibido; jwt.cart.owner asegura que el recurso pertenezca al usuario autenticado.
+Route::middleware(['autenticar.jwt', 'jwt.cart.owner'])->group(function () {
     Route::prefix('items')->group(function () {
         Route::get('/', [ItemController::class, 'index']);
         Route::post('/', [ItemController::class, 'store']);

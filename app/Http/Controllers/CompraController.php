@@ -28,12 +28,12 @@ class CompraController extends Controller
      */
     public function update(Request $request, Compra $compra)
     {
-        $request->validate([
+        $validated = $request->validate([
             'usuario_id' => 'sometimes|required|integer',
             'total' => 'sometimes|required|numeric|min:0',
         ]);
 
-        $compra->update($request->all());
+        $compra->update($validated);
 
         return response()->json($compra);
     }

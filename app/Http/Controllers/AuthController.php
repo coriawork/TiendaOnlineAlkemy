@@ -11,16 +11,16 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'nombre' => ['required', 'string', 'max:255'],
             'correo' => ['required', 'email', 'unique:usuarios,correo'],
             'password' => ['required', 'string', 'min:6'],
         ]);
 
         $usuario = Usuario::create([
-            'nombre' => $request->nombre,
-            'correo' => $request->correo,
-            'password' => bcrypt($request->password),
+            'nombre' => $validated['nombre'],
+            'correo' => $validated['correo'],
+            'password' => bcrypt($validated['password']),
         ]);
 
         $token = JWTAuth::fromUser($usuario);
@@ -39,14 +39,14 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'correo' => ['required', 'email'],
             'password' => ['required', 'string'],
         ]);
 
         $credentials = [
-            'correo' => $request->correo,
-            'password' => $request->password,
+            'correo' => $validated['correo'],
+            'password' => $validated['password'],
         ];
 
         if (! $token = JWTAuth::attempt($credentials)) {

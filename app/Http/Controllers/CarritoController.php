@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Carrito;
 use App\Models\Item;
+use Illuminate\Http\Request;
 
 class CarritoController extends Controller
 {
@@ -14,6 +14,7 @@ class CarritoController extends Controller
     public function index()
     {
         $carritos = Carrito::all();
+
         return response()->json($carritos);
     }
 
@@ -22,11 +23,11 @@ class CarritoController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'usuario_id' => 'required|integer',
         ]);
 
-        $carrito = Carrito::create($request->all());
+        $carrito = Carrito::create($validated);
 
         return response()->json($carrito, 201);
     }
@@ -39,21 +40,19 @@ class CarritoController extends Controller
         return response()->json($carrito);
     }
 
-
     /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, Carrito $carrito)
     {
-        $request->validate([
+        $validated = $request->validate([
             'usuario_id' => 'sometimes|required|integer',
         ]);
 
-        $carrito->update($request->all());
+        $carrito->update($validated);
 
         return response()->json($carrito);
     }
-
 
     /**
      * Remove the specified resource from storage.
@@ -73,6 +72,7 @@ class CarritoController extends Controller
             $producto = $item->producto->precio;
             $total += $cantidad * $producto;
         }
+
         return response()->json(['total' => $total]);
     }
 }

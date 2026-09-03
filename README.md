@@ -143,11 +143,23 @@ Estas rutas requieren un token JWT válido:
 | POST | `/api/auth/refresh` | Renueva el token actual. |
 | GET | `/api/auth/me` | Devuelve el perfil del usuario autenticado. |
 
+El middleware personalizado se registra con el alias `autenticar.jwt`. Se usa un alias propio para evitar conflictos con aliases registrados por paquetes de autenticación.
+
+### Protección frente a CSRF, XSS y SQL Injection
+
+La API utiliza autenticación stateless mediante el encabezado `Authorization: Bearer <token>`, no autenticación basada en cookies de sesión. Por eso no se añade el middleware CSRF de formularios de Laravel a `routes/api.php`: el token Bearer no se envía automáticamente en una petición cross-site.
+
+El middleware global `SeguridadApi`, añadido al grupo `api`, rechaza las solicitudes de modificación que incluyan una cookie de sesión pero no un token Bearer. Esto evita reutilizar accidentalmente la sesión web como mecanismo de autenticación de la API y reduce el riesgo de CSRF.
+
+Para reducir XSS, todas las respuestas de la API se sirven con cabeceras `Content-Security-Policy`, `X-Content-Type-Options` y `X-Frame-Options`. Laravel serializa las respuestas mediante JSON, y los datos recibidos se validan antes de almacenarse; los clientes deben tratar los valores JSON como texto y no insertarlos como HTML sin escapar.
+
+Para evitar SQL Injection, las consultas se realizan mediante Eloquent y Query Builder, que usan PDO parameter binding. Las escrituras utilizan `$request->validate()` y `$request->validated()` o los campos validados explícitamente; no se interpolan valores recibidos del cliente en SQL ni se usa `$request->all()` para asignación masiva.
+
 ### Rutas protegidas por JWT + propietario del recurso
 
 Estas rutas tienen dos validaciones:
 
-- `jwt.auth`: valida que el token sea válido y no haya expirado.
+- `autenticar.jwt`: valida que el token sea válido y no haya expirado.
 - `jwt.cart.owner`: verifica que el usuario autenticado es el propietario del carrito o compra que intenta consultar/modificar.
 
 | Método | URL | Motivo |
