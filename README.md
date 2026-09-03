@@ -120,6 +120,45 @@ Las rutas disponibles son:
 
 Las rutas de la API se encuentran en `routes/api.php` y están disponibles bajo el prefijo `/api`.
 
+## Seguridad de rutas y JWT
+
+La API no aplica un middleware global a todas las rutas, porque eso impediría el flujo normal de autenticación: el registro y el login deben ser públicos para permitir que el cliente obtenga un token JWT antes de acceder a recursos protegidos.
+
+### Rutas públicas
+
+Estas rutas son accesibles sin autenticación:
+
+| Método | URL | Motivo |
+| ------ | --- | ------ |
+| POST | `/api/auth/register` | Permite crear un usuario y obtener acceso a la API. |
+| POST | `/api/auth/login` | Emite el JWT que usará el cliente en las siguientes peticiones. |
+
+### Rutas protegidas por JWT
+
+Estas rutas requieren un token JWT válido:
+
+| Método | URL | Motivo |
+| ------ | --- | ------ |
+| POST | `/api/auth/logout` | Cierra la sesión del usuario autenticado. |
+| POST | `/api/auth/refresh` | Renueva el token actual. |
+| GET | `/api/auth/me` | Devuelve el perfil del usuario autenticado. |
+
+### Rutas protegidas por JWT + propietario del recurso
+
+Estas rutas tienen dos validaciones:
+
+- `jwt.auth`: valida que el token sea válido y no haya expirado.
+- `jwt.cart.owner`: verifica que el usuario autenticado es el propietario del carrito o compra que intenta consultar/modificar.
+
+| Método | URL | Motivo |
+| ------ | --- | ------ |
+| GET/POST/PUT/DELETE | `/api/items` | Un usuario solo puede manipular sus propios items del carrito. |
+| GET/POST | `/api/carritos` | El carrito pertenece al usuario autenticado. |
+| GET/PUT/DELETE | `/api/compras` | Las compras y su historial deben estar asociados al usuario autenticado. |
+| POST | `/api/compras/{usuario}/checkout` | El checkout solo puede ejecutarse para el usuario actual y con su carrito. |
+
+Esto evita que un cliente acceda, modifique o elimine recursos de otra persona aunque conozca la URL.
+
 ## Categorías
 
 | Método | URL                       | Acción                |
