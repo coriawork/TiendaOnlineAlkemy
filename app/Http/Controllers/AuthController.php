@@ -77,7 +77,7 @@ class AuthController extends Controller
 
     public function refresh()
     {
-        $token = auth()->guard('api')->refresh();
+        $token = JWTAuth::refresh();
 
         return response()->json([
             'token' => $token,
