@@ -103,8 +103,13 @@ class ItemController extends Controller
      */
     public function destroy(int $carrito_id, int $producto_id)
     {
-        $item = $this->findItemByCompositeKey($carrito_id, $producto_id);
-        $item->delete();
+        $deleted = Item::where('carrito_id', $carrito_id)
+            ->where('producto_id', $producto_id)
+            ->delete();
+
+        if ($deleted === 0) {
+            abort(404);
+        }
 
         return response()->json(null, 204);
     }

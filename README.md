@@ -27,6 +27,44 @@ npm install
 
 Crear una base de datos MySQL y configurar las credenciales correspondientes en el archivo `.env`.
 
+## PHPUnit y pruebas automatizadas
+
+El proyecto utiliza **PHPUnit 13** como motor de pruebas y **Pest 5** como una sintaxis más sencilla sobre PHPUnit. PHPUnit ejecuta las pruebas, registra los resultados y permite detectar regresiones antes de integrar cambios.
+
+La configuración se encuentra en `phpunit.xml`:
+
+* Las pruebas se separan en `tests/Unit` y `tests/Feature`.
+* Las pruebas usan SQLite en memoria para no modificar la base MySQL de desarrollo.
+* `RefreshDatabase` reinicia el esquema antes de cada prueba Feature, por lo que cada caso es independiente.
+* `BCRYPT_ROUNDS=4` acelera las pruebas sin cambiar la configuración bcrypt de producción.
+
+Ejecutar toda la suite:
+
+```bash
+php artisan test --compact
+```
+
+También puede ejecutarse con `vendor/bin/pest`. Aunque PHPUnit es el motor de ejecución, las pruebas de este proyecto están escritas con Pest y deben iniciarse mediante Pest o Artisan para que se cargue su configuración.
+
+Ejecutar una prueba o archivo concreto:
+
+```bash
+php artisan test --compact --filter="registra un usuario"
+php artisan test --compact tests/Feature/AutenticacionYCarritoTest.php
+```
+
+Las pruebas Feature verifican flujos completos HTTP, incluyendo validación, autenticación, persistencia y relaciones:
+
+* `AutenticacionYCarritoTest` comprueba que el registro emita un JWT, almacene la contraseña con bcrypt y cree un único carrito para el usuario.
+* `StockDelCarritoTest` comprueba que no se pueda agregar ni actualizar un item por encima del stock disponible.
+* `AutenticacionJwtTest` comprueba login exitoso, rechazo de rutas protegidas sin token y acceso permitido con un JWT válido.
+* `FlujoProductoCarritoTest` cubre el alta de producto, el agregado al carrito y la eliminación del item.
+* `CheckoutTest` cubre el checkout completo, la creación de la compra, el descuento de stock y el vaciado del carrito.
+
+Las pruebas Unit de `ReglasDeNegocioTest` cubren el redondeo del resumen de checkout, el límite máximo de precio, el ocultamiento de contraseñas y el casteo del stock.
+
+Las pruebas Unit se reservan para reglas o clases aisladas. Esta separación ayuda a localizar fallos: una prueba Unit suele señalar un problema de lógica puntual, mientras que una prueba Feature detecta errores en la integración entre rutas, middleware, controladores, modelos y base de datos.
+
 ## Ejecutar el proyecto
 
 Para iniciar el servidor de desarrollo de Laravel:
