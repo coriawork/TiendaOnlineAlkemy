@@ -23,6 +23,7 @@ class AuthController extends Controller
             'correo' => $validated['correo'],
             'password' => Hash::make($validated['password']),
         ]);
+        $usuario->carrito()->create();
 
         $token = JWTAuth::fromUser($usuario);
 

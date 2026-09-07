@@ -18,9 +18,12 @@ class ItemController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $items = Item::all();
+        $usuarioId = $request->user()->getAuthIdentifier();
+        $items = Item::whereHas('carrito', function ($query) use ($usuarioId): void {
+            $query->where('usuario_id', $usuarioId);
+        })->get();
 
         return response()->json($items);
     }
@@ -47,7 +50,13 @@ class ItemController extends Controller
             ->first();
 
         if ($item) {
-            $item->cantidad += $validated['cantidad'];
+            $nuevaCantidad = $item->cantidad + $validated['cantidad'];
+
+            if ($producto->stock < $nuevaCantidad) {
+                return response()->json(['message' => 'La cantidad total supera el stock disponible.'], 400);
+            }
+
+            $item->cantidad = $nuevaCantidad;
             $item->save();
 
             return response()->json($item, 200);
@@ -73,15 +82,18 @@ class ItemController extends Controller
      */
     public function update(Request $request, int $carrito_id, int $producto_id)
     {
-        $request->validate([
+        $validated = $request->validate([
             'cantidad' => 'sometimes|required|integer|min:1',
         ]);
 
-        Item::where('carrito_id', $carrito_id)
-            ->where('producto_id', $producto_id)
-            ->update($request->only('cantidad'));
-
         $item = $this->findItemByCompositeKey($carrito_id, $producto_id);
+        $cantidad = $validated['cantidad'] ?? $item->cantidad;
+
+        if ($item->producto->stock < $cantidad) {
+            return response()->json(['message' => 'La cantidad solicitada supera el stock disponible.'], 400);
+        }
+
+        $item->update(['cantidad' => $cantidad]);
 
         return response()->json($item);
     }
@@ -91,9 +103,8 @@ class ItemController extends Controller
      */
     public function destroy(int $carrito_id, int $producto_id)
     {
-        Item::where('carrito_id', $carrito_id)
-            ->where('producto_id', $producto_id)
-            ->delete();
+        $item = $this->findItemByCompositeKey($carrito_id, $producto_id);
+        $item->delete();
 
         return response()->json(null, 204);
     }

@@ -1,12 +1,12 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ItemController;
-use App\Http\Controllers\UsuarioController;
-use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\CarritoController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\CompraController;
+use App\Http\Controllers\ItemController;
+use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\UsuarioController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -34,8 +34,10 @@ Route::middleware(['autenticar.jwt', 'jwt.cart.owner'])->group(function () {
         Route::get('/', [ItemController::class, 'index']);
         Route::post('/', [ItemController::class, 'store']);
         Route::get('/{carrito_id}/{producto_id}', [ItemController::class, 'show']);
-        Route::put('/{carrito_id}/{producto_id}', [ItemController::class, 'update']);
-        Route::delete('/{carrito_id}/{producto_id}', [ItemController::class, 'destroy']);
+        Route::put('/{carrito_id}/{producto_id}', [ItemController::class, 'update'])
+            ->name('items.actualizar');
+        Route::delete('/{carrito_id}/{producto_id}', [ItemController::class, 'destroy'])
+            ->name('items.eliminar');
     });
 
     Route::prefix('carritos')->group(function () {
@@ -68,7 +70,6 @@ Route::prefix('productos')->group(function () {
     Route::put('/{producto}', [ProductoController::class, 'update']);
     Route::delete('/{producto}', [ProductoController::class, 'destroy']);
 });
-
 
 Route::prefix('categorias')->group(function () {
     Route::get('/', [CategoriaController::class, 'index']);

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
@@ -30,9 +31,9 @@ class Usuario extends Authenticatable implements JWTSubject
         return [];
     }
 
-    public function carritos(): HasMany
+    public function carrito(): HasOne
     {
-        return $this->hasMany(Carrito::class, 'usuario_id');
+        return $this->hasOne(Carrito::class, 'usuario_id');
     }
 
     public function compras(): HasMany

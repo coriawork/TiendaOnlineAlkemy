@@ -31,8 +31,7 @@ class UsuarioController extends Controller
 
         $validated['password'] = Hash::make($validated['password']);
         $usuario = Usuario::create($validated);
-
-        new CarritoController()->store(new Request(['usuario_id' => $usuario->id]));
+        $usuario->carrito()->create();
 
         return response()->json($usuario, 201);
     }
@@ -52,7 +51,7 @@ class UsuarioController extends Controller
     {
         $validated = $request->validate([
             'nombre' => 'sometimes|required|string|max:255',
-            'correo' => 'sometimes|required|email|unique:usuarios,correo,' . $usuario->id,
+            'correo' => 'sometimes|required|email|unique:usuarios,correo,'.$usuario->id,
             'password' => 'sometimes|required|string|min:6',
         ]);
 

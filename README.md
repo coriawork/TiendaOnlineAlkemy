@@ -219,9 +219,19 @@ Los items representan los productos agregados a un carrito.
 | ------ | ----------------------- | -------------------------- |
 | GET    | `/api/items`             | Listar items                 |
 | POST   | `/api/items`             | Agregar un producto a un carrito |
-| GET    | `/api/items/{item}`      | Ver un item                  |
-| PUT    | `/api/items/{item}`      | Actualizar la cantidad de un item |
-| DELETE | `/api/items/{item}`      | Eliminar un item de un carrito |
+| GET    | `/api/items/{carrito_id}/{producto_id}` | Ver un item                  |
+| PUT    | `/api/items/{carrito_id}/{producto_id}` | Cambiar la cantidad de un item |
+| DELETE | `/api/items/{carrito_id}/{producto_id}` | Eliminar un item del carrito |
+
+Para cambiar la cantidad, enviar un JWT válido y este cuerpo JSON:
+
+```json
+{
+    "cantidad": 3
+}
+```
+
+El endpoint `PUT` reemplaza la cantidad actual y valida que no supere el stock disponible. El endpoint `DELETE` elimina el item indicado por la combinación de carrito y producto. Ambos endpoints solo funcionan si el carrito pertenece al usuario autenticado.
 
 ## Compras
 

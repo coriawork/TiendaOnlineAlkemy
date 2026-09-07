@@ -11,9 +11,9 @@ class CarritoController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $carritos = Carrito::all();
+        $carritos = Carrito::where('usuario_id', $request->user()->getAuthIdentifier())->get();
 
         return response()->json($carritos);
     }
