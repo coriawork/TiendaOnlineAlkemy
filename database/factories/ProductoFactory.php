@@ -27,14 +27,14 @@ class ProductoFactory extends Factory
 
     public function sinStock(): static
     {
-        return $this->state(fn (): array => [
+        return $this->state(fn(): array => [
             'stock' => 0,
         ]);
     }
 
     public function conStock(int $stock): static
     {
-        return $this->state(fn (): array => [
+        return $this->state(fn(): array => [
             'stock' => $stock,
         ]);
     }

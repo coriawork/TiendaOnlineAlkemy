@@ -31,7 +31,7 @@ class UsuarioFactory extends Factory
 
     public function conContraseña(string $contraseña): static
     {
-        return $this->state(fn (): array => [
+        return $this->state(fn(): array => [
             'password' => Hash::make($contraseña),
         ]);
     }
