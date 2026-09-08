@@ -1,57 +1,316 @@
-# Requisitos
+# Alkemy E-commerce API
 
-* PHP 8.2 o superior
-* Composer
-* Node.js y npm
-* MySQL
+API REST para un e-commerce con catálogo, usuarios, carritos, items y checkout. El proyecto está construido con Laravel 13, autenticación JWT y respuestas JSON para la API.
 
-# Instalación
+## Requisitos
 
-## Instalar dependencias de PHP
+- PHP 8.3 o superior
+- Composer
+- Node.js y npm
+- MySQL para desarrollo
+- SQLite habilitado en PHP para las pruebas
 
-Abrir una terminal dentro del proyecto y ejecutar:
+## Instalación
+
+Desde la raíz del proyecto:
 
 ```bash
 composer install
-```
-
-## Instalar dependencias de JavaScript
-
-Ejecutar:
-
-```bash
+copy .env.example .env
+php artisan key:generate
+php artisan jwt:secret
 npm install
 ```
 
-## Configurar la base de datos
+En Linux o macOS, el segundo comando equivalente es:
 
-Crear una base de datos MySQL y configurar las credenciales correspondientes en el archivo `.env`.
+```bash
+cp .env.example .env
+```
 
-## PHPUnit y pruebas automatizadas
+Configurar en `.env` la conexión de desarrollo. Ejemplo con MySQL:
 
-El proyecto utiliza **PHPUnit 13** como motor de pruebas y **Pest 5** como una sintaxis más sencilla sobre PHPUnit. PHPUnit ejecuta las pruebas, registra los resultados y permite detectar regresiones antes de integrar cambios.
+```dotenv
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=alkemy
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-La configuración se encuentra en `phpunit.xml`:
+Crear las tablas y cargar datos iniciales:
 
-* Las pruebas se separan en `tests/Unit` y `tests/Feature`.
-* Las pruebas usan SQLite en memoria para no modificar la base MySQL de desarrollo.
-* `RefreshDatabase` reinicia el esquema antes de cada prueba Feature, por lo que cada caso es independiente.
-* `BCRYPT_ROUNDS=4` acelera las pruebas sin cambiar la configuración bcrypt de producción.
+```bash
+php artisan migrate
+php artisan db:seed
+```
 
-Los datos relacionados se generan con factories de Laravel:
-
-* `Usuario::factory()` crea usuarios con contraseña bcrypt y un carrito asociado.
-* `Categoria::factory()` crea categorías con nombre y descripción.
-* `Producto::factory()` crea productos relacionados con una categoría.
-* `Producto::factory()->sinStock()` y `Producto::factory()->conStock(10)` permiten preparar escenarios de stock.
-
-El seeder `DatosPruebaSeeder` combina estas factories para crear categorías, productos y usuarios consistentes. Se ejecuta automáticamente antes de cada Feature test y también puede ejecutarse manualmente con:
+El seeder principal ejecuta `DatosPruebaSeeder`, que genera categorías, productos y usuarios de prueba mediante factories. Para ejecutar únicamente esos datos:
 
 ```bash
 php artisan db:seed --class=DatosPruebaSeeder
 ```
 
-El seeder se ejecuta sobre la base configurada para el entorno activo. En testing, `RefreshDatabase` usa SQLite en memoria, por lo que estos datos se descartan al terminar cada prueba.
+## Ejecución
+
+Iniciar Laravel:
+
+```bash
+php artisan serve
+```
+
+Iniciar Vite durante el desarrollo del frontend:
+
+```bash
+npm run dev
+```
+
+Para compilar recursos frontend para producción:
+
+```bash
+npm run build
+```
+
+También puede utilizarse el script combinado del proyecto:
+
+```bash
+composer run dev
+```
+
+La API queda disponible por defecto en `http://localhost:8000/api`.
+
+## Arquitectura
+
+El proyecto sigue una arquitectura MVC de Laravel, con una capa adicional de DTOs y middleware para los flujos de checkout y autenticación.
+
+```text
+app/
+├── DTO/                    Datos de entrada y resumen del checkout
+├── Http/
+│   ├── Controllers/        Endpoints web y API
+│   ├── Middleware/         JWT, seguridad API y propiedad del carrito
+│   └── Requests/           Validación especializada de productos
+├── Models/                 Usuario, categoría, producto, carrito, item y compra
+└── Rules/                  Reglas de negocio, como PrecioValido
+
+database/
+├── factories/              Datos reutilizables para pruebas
+├── migrations/             Esquema y cambios de base de datos
+└── seeders/                Datos iniciales y datos de prueba
+
+routes/
+├── api.php                 API JSON bajo el prefijo /api
+└── web.php                 Rutas web y vistas Blade
+
+tests/
+├── Feature/                Flujos HTTP completos
+└── Unit/                   Reglas y unidades aisladas
+```
+
+### Flujo de una petición API
+
+1. Laravel encuentra la ruta en `routes/api.php`.
+2. El grupo `api` ejecuta `SeguridadApi`.
+3. Las rutas protegidas validan el JWT con `AutenticarJwtApi`.
+4. `VerificarPropietarioCarrito` comprueba que el recurso pertenece al usuario autenticado cuando corresponde.
+5. El controlador valida la entrada y utiliza Eloquent/DTOs.
+6. La respuesta se devuelve en JSON.
+
+## API
+
+Todas las URLs de esta sección comienzan con `/api`.
+
+### Autenticación
+
+| Método | Endpoint | Autenticación | Descripción |
+| --- | --- | --- | --- |
+| POST | `/auth/register` | Pública | Registra un usuario, crea su carrito y devuelve un JWT. |
+| POST | `/auth/login` | Pública | Valida credenciales y devuelve un JWT. |
+| GET | `/auth/me` | JWT | Devuelve el usuario autenticado. |
+| POST | `/auth/refresh` | JWT | Renueva el token actual. |
+| POST | `/auth/logout` | JWT | Invalida el token actual. |
+
+Registro:
+
+```json
+{
+  "nombre": "Juan Pérez",
+  "correo": "juan@example.com",
+  "password": "password123"
+}
+```
+
+Login:
+
+```json
+{
+  "correo": "juan@example.com",
+  "password": "password123"
+}
+```
+
+Las respuestas de registro/login incluyen `token`, `token_type` y `expires_in`.
+
+### Encabezado JWT
+
+Para las rutas protegidas enviar:
+
+```http
+Authorization: Bearer TU_TOKEN_JWT
+Accept: application/json
+Content-Type: application/json
+```
+
+En Postman se puede seleccionar **Authorization > Bearer Token** y utilizar la variable `jwt_token`.
+
+### Categorías
+
+| Método | Endpoint | Descripción |
+| --- | --- | --- |
+| GET | `/categorias` | Lista categorías. |
+| POST | `/categorias` | Crea una categoría. |
+| GET | `/categorias/{categoria}` | Consulta una categoría. |
+| PUT | `/categorias/{categoria}` | Actualiza una categoría. |
+| DELETE | `/categorias/{categoria}` | Elimina una categoría. |
+
+### Productos
+
+| Método | Endpoint | Descripción |
+| --- | --- | --- |
+| GET | `/productos` | Lista productos paginados. |
+| POST | `/productos` | Crea un producto validando categoría, precio y stock. |
+| GET | `/productos/{producto}` | Consulta un producto. |
+| PUT | `/productos/{producto}` | Actualiza un producto. |
+| DELETE | `/productos/{producto}` | Elimina un producto. |
+
+Ejemplo de alta:
+
+```json
+{
+  "categoria_id": 1,
+  "nombre": "Teclado mecánico",
+  "descripcion": "Teclado RGB",
+  "precio": 25000,
+  "stock": 10
+}
+```
+
+### Usuarios
+
+| Método | Endpoint | Descripción |
+| --- | --- | --- |
+| GET | `/usuarios` | Lista usuarios. |
+| POST | `/usuarios` | Crea un usuario y su carrito. |
+| GET | `/usuarios/{usuario}` | Consulta un usuario. |
+| PUT | `/usuarios/{usuario}` | Actualiza un usuario. |
+| DELETE | `/usuarios/{usuario}` | Elimina un usuario. |
+
+Las contraseñas se almacenan con bcrypt y no se incluyen en las respuestas JSON.
+
+### Carritos e items
+
+Cada usuario tiene un único carrito. Los endpoints de carrito e items requieren JWT y validan la propiedad del carrito.
+
+| Método | Endpoint | Descripción |
+| --- | --- | --- |
+| GET | `/carritos` | Lista únicamente el carrito del usuario autenticado. |
+| GET | `/carritos/{carrito}` | Consulta el carrito propio. |
+| POST | `/carritos/{carrito}/empty` | Vacía el carrito propio. |
+| GET | `/items` | Lista items del carrito propio. |
+| POST | `/items` | Agrega un producto al carrito. |
+| GET | `/items/{carrito_id}/{producto_id}` | Consulta un item. |
+| PUT | `/items/{carrito_id}/{producto_id}` | Reemplaza la cantidad del item. |
+| DELETE | `/items/{carrito_id}/{producto_id}` | Elimina el item. |
+
+Agregar un item:
+
+```json
+{
+  "carrito_id": 1,
+  "producto_id": 2,
+  "cantidad": 2
+}
+```
+
+Actualizar cantidad:
+
+```json
+{
+  "cantidad": 3
+}
+```
+
+La tabla `items` utiliza una clave compuesta (`carrito_id`, `producto_id`). Las cantidades deben ser mayores a cero y no pueden superar el stock disponible.
+
+### Compras y checkout
+
+| Método | Endpoint | Descripción |
+| --- | --- | --- |
+| GET | `/compras` | Lista compras del flujo autorizado. |
+| GET | `/compras/{usuario}` | Lista compras del usuario autenticado. |
+| POST | `/compras/{usuario}/checkout` | Genera compras a partir del carrito. |
+| PUT | `/compras/{compra}` | Actualiza una compra. |
+| DELETE | `/compras/{compra}` | Elimina una compra. |
+
+Checkout:
+
+```json
+{
+  "metodo_pago": "tarjeta",
+  "direccion_envio": "Calle 123",
+  "impuesto": 300,
+  "envio": 500
+}
+```
+
+El checkout calcula el subtotal, suma impuestos y envío, crea una compra por item, descuenta stock y elimina los items procesados dentro de una transacción.
+
+## Seguridad
+
+### JWT y autorización
+
+- `AutenticarJwtApi` devuelve `401` si falta el token, es inválido o está vencido.
+- `VerificarPropietarioCarrito` devuelve `403` cuando el usuario intenta operar sobre el carrito de otra persona.
+- Los aliases se registran en `bootstrap/app.php` como `autenticar.jwt` y `jwt.cart.owner`.
+- El usuario se obtiene desde el modelo `Usuario`, que implementa `Authenticatable` y `JWTSubject`.
+
+### CSRF
+
+La API es stateless y usa `Authorization: Bearer`, no cookies de sesión. Por eso no aplica el middleware CSRF de formularios Blade a `routes/api.php`. `SeguridadApi`, agregado al grupo `api`, rechaza mutaciones que presenten una cookie de sesión sin token Bearer.
+
+### XSS
+
+Las respuestas de la API son JSON y `SeguridadApi` agrega `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options` y `Referrer-Policy`. Los consumidores deben tratar los valores recibidos como texto y escapar cualquier dato antes de insertarlo en HTML.
+
+### SQL Injection y entrada de datos
+
+Las consultas usan Eloquent/Query Builder con binding de parámetros. Las entradas se validan con Form Requests o `$request->validate()` y se escriben únicamente campos validados. No se interpolan valores del usuario en SQL ni se utiliza `$request->all()` para asignación masiva.
+
+### Contraseñas
+
+Las contraseñas se procesan con `Hash::make()` y bcrypt. `Usuario::$hidden` evita exponerlas en serializaciones JSON. En testing se usa `BCRYPT_ROUNDS=4` para acelerar la suite.
+
+## Factories y Seeders
+
+Las factories disponibles son:
+
+- `Usuario::factory()`: usuario con contraseña bcrypt y carrito asociado.
+- `Categoria::factory()`: categoría con datos Faker.
+- `Producto::factory()`: producto relacionado con una categoría.
+- `Producto::factory()->sinStock()`: producto con stock cero.
+- `Producto::factory()->conStock(10)`: producto con stock controlado.
+
+`DatosPruebaSeeder` combina estas factories para crear categorías, productos relacionados y usuarios con carrito. `DatabaseSeeder` lo utiliza como seeder principal del entorno de datos de prueba.
+
+## Tests y calidad del código
+
+El proyecto usa PHPUnit 13 como motor y Pest 5 como sintaxis. `phpunit.xml` configura SQLite en memoria, y `RefreshDatabase` aísla cada Feature test. Los tests se dividen en:
+
+- **Unit:** reglas, DTOs, casts y controladores aislados con mocking.
+- **Feature:** peticiones HTTP completas con rutas, middleware, base de datos y JWT real.
+
+La suite cubre autenticación, autorización `401/403`, factories, bcrypt, stock, carrito, checkout, subtotal y eliminación de items. `AuthControllerTest` usa Mockery para simular el proveedor JWT en la prueba unitaria; los Feature tests comprueban la integración real.
 
 Ejecutar toda la suite:
 
@@ -59,345 +318,62 @@ Ejecutar toda la suite:
 php artisan test --compact
 ```
 
-También puede ejecutarse con `vendor/bin/pest`. Aunque PHPUnit es el motor de ejecución, las pruebas de este proyecto están escritas con Pest y deben iniciarse mediante Pest o Artisan para que se cargue su configuración.
-
-Ejecutar una prueba o archivo concreto:
+Ejecutar Pest directamente:
 
 ```bash
-php artisan test --compact --filter="registra un usuario"
-php artisan test --compact tests/Feature/AutenticacionYCarritoTest.php
+vendor/bin/pest --compact
 ```
 
-Las pruebas Feature verifican flujos completos HTTP, incluyendo validación, autenticación, persistencia y relaciones:
+Ejecutar un archivo o filtro:
 
-* `AutenticacionYCarritoTest` comprueba que el registro emita un JWT, almacene la contraseña con bcrypt y cree un único carrito para el usuario.
-* `StockDelCarritoTest` comprueba que no se pueda agregar ni actualizar un item por encima del stock disponible.
-* `AutenticacionJwtTest` comprueba login exitoso, rechazo de rutas protegidas sin token y acceso permitido con un JWT válido.
-* `MiddlewareSeguridadTest` verifica respuestas `401` sin token o con JWT inválido y `403` al intentar usar el carrito de otro usuario.
-* `FlujoProductoCarritoTest` cubre el alta de producto, el agregado al carrito y la eliminación del item.
-* `CheckoutTest` cubre el checkout completo, la creación de la compra, el descuento de stock y el vaciado del carrito.
+```bash
+php artisan test --compact tests/Feature/CheckoutTest.php
+php artisan test --compact --filter="login"
+```
 
-Las pruebas Unit de `ReglasDeNegocioTest` cubren el redondeo del resumen de checkout, el límite máximo de precio, el ocultamiento de contraseñas y el casteo del stock.
+No ejecutar `vendor/bin/phpunit` directamente: las pruebas están escritas con Pest y deben iniciarse con `php artisan test` o `vendor/bin/pest`.
 
 ## Mocking de dependencias externas
 
-El proyecto no realiza llamadas HTTP, pagos ni envíos de correo externos actualmente. Para aislar la lógica del controlador de la dependencia JWT, `AuthControllerTest` simula `JWTAuth::attempt()` con Mockery y devuelve un token de prueba. Así se verifica el contrato del controlador sin depender de la firma criptográfica real.
+El proyecto no realiza llamadas HTTP, pagos ni envíos de correo externos actualmente. `AuthControllerTest` usa Mockery para simular `JWTAuth::attempt()` y devolver un token de prueba. De esta forma se prueba el contrato del controlador sin depender de la firma criptográfica real.
 
-Los Feature tests continúan usando JWT real para validar la integración completa de login, middleware y rutas protegidas. Esta combinación permite que los Unit tests sean rápidos y deterministas, mientras que los Feature tests comprueban el comportamiento real de la API.
+Los Feature tests mantienen JWT real para validar la integración completa de login, middleware y rutas protegidas.
 
-Las pruebas Unit se reservan para reglas o clases aisladas. Esta separación ayuda a localizar fallos: una prueba Unit suele señalar un problema de lógica puntual, mientras que una prueba Feature detecta errores en la integración entre rutas, middleware, controladores, modelos y base de datos.
+## Postman
 
-## Ejecutar el proyecto
+Importar [DocumentacionPostman.postman_collection.json](DocumentacionPostman.postman_collection.json) en Postman.
 
-Para iniciar el servidor de desarrollo de Laravel:
+Orden recomendado:
 
-```bash
-php artisan serve
-```
+1. Crear usuario o utilizar uno existente.
+2. Ejecutar **Iniciar sesión y guardar token**.
+3. Crear o consultar categorías y productos.
+4. Obtener el carrito autenticado.
+5. Agregar, actualizar o eliminar items.
+6. Ejecutar checkout.
 
-Además, el proyecto utiliza **Tailwind CSS** para los estilos, por lo que es necesario ejecutar Vite para compilar los recursos frontend:
+La colección guarda el JWT en `jwt_token` y lo aplica automáticamente a carritos, items y compras.
 
-```bash
-npm run dev
-```
-
-Mientras se desarrolla, se recomienda mantener `npm run dev` ejecutándose para que Tailwind detecte y compile los cambios realizados en las vistas.
-
-# Cómo funciona el patrón implementado
-
-El proyecto utiliza **Laravel**, siguiendo una arquitectura basada en el patrón MVC (Model-View-Controller).
-
-* **Modelos:** representan los datos y la lógica relacionada con ellos (`Categoria`, `Producto`, `Usuario`, `Carrito`, `Item`, `Compra`).
-* **Controladores:** reciben las peticiones HTTP, utilizan los modelos y preparan la información necesaria para las vistas o para la respuesta JSON.
-* **Vistas:** utilizan Blade para generar el HTML que se muestra al usuario.
-* **Rutas:** definen las URLs disponibles y determinan qué controlador y método debe procesar cada petición.
-
-El proyecto expone dos flujos distintos:
-
-* **Flujo web** (`routes/web.php`): gestión de productos mediante vistas Blade.
-* **Flujo API** (`routes/api.php`): gestión de categorías, productos, usuarios, carritos, items y compras mediante respuestas JSON, pensado para el feature de carrito de compras.
-
-## Flujo general (vistas)
-
-1. El usuario realiza una petición a una URL de la aplicación.
-2. Laravel recibe la petición y busca una ruta que coincida.
-3. La ruta determina qué método del `ProductoController` debe ejecutarse.
-4. El controlador utiliza el modelo `Producto` para consultar o modificar los datos.
-5. El controlador prepara la información necesaria.
-6. La vista Blade recibe los datos y genera el HTML.
-7. Tailwind CSS proporciona los estilos utilizados por las vistas.
-
-Esto respeta el patrón MVC porque la vista se encarga de la presentación, mientras que el controlador coordina el flujo y el modelo se encarga de los datos.
-
-## Flujo general (API)
-
-1. El cliente (por ejemplo, Postman o un frontend) realiza una petición a una URL bajo `/api`.
-2. Laravel recibe la petición y busca una ruta que coincida dentro de `routes/api.php`.
-3. La ruta determina qué método del controlador correspondiente debe ejecutarse (`CategoriaController`, `ProductoController`, `UsuarioController`, `CarritoController`, `ItemController` o `CompraController`).
-4. El controlador utiliza el modelo correspondiente para consultar o modificar los datos.
-5. El controlador devuelve la respuesta directamente en formato JSON, sin pasar por una vista.
-
-Este flujo es el que se utiliza para agregar y quitar productos de un carrito, y para realizar la compra.
-
-# Rutas de productos
-
-Las operaciones relacionadas con productos se encuentran agrupadas bajo el prefijo `/productos`.
-
-```php
-Route::prefix('productos')->group(function () {
-    Route::get('/', [ProductoController::class, 'index'])
-        ->name('productos');
-
-    Route::get('/crear', [ProductoController::class, 'create'])
-        ->name('productos.crear');
-
-    Route::get('/{producto}/editar', [ProductoController::class, 'edit'])
-        ->name('productos.editar');
-
-    Route::post('/', [ProductoController::class, 'store'])
-        ->name('productos');
-
-    Route::delete('/{producto}', [ProductoController::class, 'destroy'])
-        ->name('productos.eliminar');
-
-    Route::put('/{producto}', [ProductoController::class, 'update'])
-        ->name('productos.actualizar');
-});
-```
-
-Las rutas disponibles son:
-
-| Método | URL                            | Acción                         |
-| ------ | ------------------------------ | ------------------------------ |
-| GET    | `/productos`                   | Listar productos               |
-| GET    | `/productos/crear`             | Mostrar formulario de creación |
-| POST   | `/productos`                   | Crear un producto              |
-| GET    | `/productos/{producto}/editar` | Mostrar formulario de edición  |
-| PUT    | `/productos/{producto}`        | Actualizar un producto         |
-| DELETE | `/productos/{producto}`        | Eliminar un producto           |
-
-# Rutas de la API
-
-Las rutas de la API se encuentran en `routes/api.php` y están disponibles bajo el prefijo `/api`.
-
-## Seguridad de rutas y JWT
-
-La API no aplica un middleware global a todas las rutas, porque eso impediría el flujo normal de autenticación: el registro y el login deben ser públicos para permitir que el cliente obtenga un token JWT antes de acceder a recursos protegidos.
-
-### Rutas públicas
-
-Estas rutas son accesibles sin autenticación:
-
-| Método | URL | Motivo |
-| ------ | --- | ------ |
-| POST | `/api/auth/register` | Permite crear un usuario y obtener acceso a la API. |
-| POST | `/api/auth/login` | Emite el JWT que usará el cliente en las siguientes peticiones. |
-
-### Rutas protegidas por JWT
-
-Estas rutas requieren un token JWT válido:
-
-| Método | URL | Motivo |
-| ------ | --- | ------ |
-| POST | `/api/auth/logout` | Cierra la sesión del usuario autenticado. |
-| POST | `/api/auth/refresh` | Renueva el token actual. |
-| GET | `/api/auth/me` | Devuelve el perfil del usuario autenticado. |
-
-El middleware personalizado se registra con el alias `autenticar.jwt`. Se usa un alias propio para evitar conflictos con aliases registrados por paquetes de autenticación.
-
-### Protección frente a CSRF, XSS y SQL Injection
-
-La API utiliza autenticación stateless mediante el encabezado `Authorization: Bearer <token>`, no autenticación basada en cookies de sesión. Por eso no se añade el middleware CSRF de formularios de Laravel a `routes/api.php`: el token Bearer no se envía automáticamente en una petición cross-site.
-
-El middleware global `SeguridadApi`, añadido al grupo `api`, rechaza las solicitudes de modificación que incluyan una cookie de sesión pero no un token Bearer. Esto evita reutilizar accidentalmente la sesión web como mecanismo de autenticación de la API y reduce el riesgo de CSRF.
-
-Para reducir XSS, todas las respuestas de la API se sirven con cabeceras `Content-Security-Policy`, `X-Content-Type-Options` y `X-Frame-Options`. Laravel serializa las respuestas mediante JSON, y los datos recibidos se validan antes de almacenarse; los clientes deben tratar los valores JSON como texto y no insertarlos como HTML sin escapar.
-
-Para evitar SQL Injection, las consultas se realizan mediante Eloquent y Query Builder, que usan PDO parameter binding. Las escrituras utilizan `$request->validate()` y `$request->validated()` o los campos validados explícitamente; no se interpolan valores recibidos del cliente en SQL ni se usa `$request->all()` para asignación masiva.
-
-### Rutas protegidas por JWT + propietario del recurso
-
-Estas rutas tienen dos validaciones:
-
-- `autenticar.jwt`: valida que el token sea válido y no haya expirado.
-- `jwt.cart.owner`: verifica que el usuario autenticado es el propietario del carrito o compra que intenta consultar/modificar.
-
-| Método | URL | Motivo |
-| ------ | --- | ------ |
-| GET/POST/PUT/DELETE | `/api/items` | Un usuario solo puede manipular sus propios items del carrito. |
-| GET/POST | `/api/carritos` | El carrito pertenece al usuario autenticado. |
-| GET/PUT/DELETE | `/api/compras` | Las compras y su historial deben estar asociados al usuario autenticado. |
-| POST | `/api/compras/{usuario}/checkout` | El checkout solo puede ejecutarse para el usuario actual y con su carrito. |
-
-Esto evita que un cliente acceda, modifique o elimine recursos de otra persona aunque conozca la URL.
-
-## Categorías
-
-| Método | URL                       | Acción                |
-| ------ | ------------------------- | ---------------------- |
-| GET    | `/api/categorias`         | Listar categorías       |
-| POST   | `/api/categorias`         | Crear una categoría     |
-| GET    | `/api/categorias/{categoria}` | Ver una categoría   |
-| PUT    | `/api/categorias/{categoria}` | Actualizar una categoría |
-| DELETE | `/api/categorias/{categoria}` | Eliminar una categoría |
-
-## Productos
-
-| Método | URL                          | Acción                |
-| ------ | ---------------------------- | ---------------------- |
-| GET    | `/api/productos`             | Listar productos        |
-| POST   | `/api/productos`             | Crear un producto       |
-| GET    | `/api/productos/{producto}`  | Ver un producto         |
-| PUT    | `/api/productos/{producto}`  | Actualizar un producto  |
-| DELETE | `/api/productos/{producto}`  | Eliminar un producto    |
-
-## Usuarios
-
-| Método | URL                        | Acción               |
-| ------ | -------------------------- | ---------------------- |
-| GET    | `/api/usuarios`            | Listar usuarios         |
-| POST   | `/api/usuarios`            | Crear un usuario        |
-| GET    | `/api/usuarios/{usuario}`  | Ver un usuario          |
-| PUT    | `/api/usuarios/{usuario}`  | Actualizar un usuario   |
-| DELETE | `/api/usuarios/{usuario}`  | Eliminar un usuario     |
-
-Al crear un usuario, se genera automáticamente su carrito de compras.
-
-## Carritos
-
-| Método | URL                              | Acción                 |
-| ------ | --------------------------------- | ----------------------- |
-| GET    | `/api/carritos`                   | Listar carritos           |
-| GET    | `/api/carritos/{carrito}`         | Ver un carrito             |
-| POST   | `/api/carritos/{carrito}/empty`   | Vaciar un carrito           |
-
-## Items
-
-Los items representan los productos agregados a un carrito.
-
-| Método | URL                    | Acción                    |
-| ------ | ----------------------- | -------------------------- |
-| GET    | `/api/items`             | Listar items                 |
-| POST   | `/api/items`             | Agregar un producto a un carrito |
-| GET    | `/api/items/{carrito_id}/{producto_id}` | Ver un item                  |
-| PUT    | `/api/items/{carrito_id}/{producto_id}` | Cambiar la cantidad de un item |
-| DELETE | `/api/items/{carrito_id}/{producto_id}` | Eliminar un item del carrito |
-
-Para cambiar la cantidad, enviar un JWT válido y este cuerpo JSON:
-
-```json
-{
-    "cantidad": 3
-}
-```
-
-El endpoint `PUT` reemplaza la cantidad actual y valida que no supere el stock disponible. El endpoint `DELETE` elimina el item indicado por la combinación de carrito y producto. Ambos endpoints solo funcionan si el carrito pertenece al usuario autenticado.
-
-## Compras
-
-| Método | URL                                 | Acción                        |
-| ------ | ------------------------------------ | ------------------------------ |
-| GET    | `/api/compras`                       | Listar compras                    |
-| GET    | `/api/compras/{usuario}`             | Ver las compras de un usuario     |
-| POST   | `/api/compras/{usuario}/checkout`    | Realizar el checkout del carrito de un usuario |
-| PUT    | `/api/compras/{compra}`              | Actualizar una compra              |
-| DELETE | `/api/compras/{compra}`              | Eliminar una compra                |
-
-El checkout genera una compra por cada item del carrito del usuario, descuenta el stock de los productos correspondientes y elimina esos items del carrito.
-
-# Estructura de carpetas
-
-La estructura principal del proyecto sigue la estructura estándar de Laravel:
+## Estructura de carpetas
 
 ```text
-Alkemy/
-├── app/
-│   ├── Http/
-│   │   └── Controllers/
-│   │       ├── CarritoController.php
-│   │       ├── CategoriaController.php
-│   │       ├── CompraController.php
-│   │       ├── Controller.php
-│   │       ├── ItemController.php
-│   │       ├── ProductoController.php
-│   │       └── UsuarioController.php
-│   └── Models/
-│       ├── Carrito.php
-│       ├── Categoria.php
-│       ├── Compra.php
-│       ├── Item.php
-│       ├── Producto.php
-│       └── Usuario.php
-├── database/
-│   ├── migrations/
-│   └── seeders/
-├── public/
-│   └── index.php
-├── resources/
-│   ├── css/
-│   │   └── app.css
-│   ├── js/
-│   │   └── app.js
-│   └── views/
-│       └── productos/
-├── routes/
-│   ├── api.php
-│   └── web.php
-├── storage/
-├── vendor/
-├── .env
-├── artisan
-├── composer.json
-├── package.json
-└── vite.config.js
+app/                 Código de aplicación
+bootstrap/           Registro de rutas y middleware
+config/              Configuración Laravel y JWT
+database/            Migraciones, factories y seeders
+public/              Punto de entrada HTTP
+resources/            Vistas Blade, CSS y JavaScript
+routes/               Rutas web y API
+storage/              Logs y archivos generados
+tests/                Unit y Feature tests
 ```
 
-Cada carpeta cumple el siguiente rol:
-
-* `app/`: contiene la lógica principal de la aplicación, incluyendo modelos y controladores.
-* `app/Http/Controllers/`: contiene los controladores que procesan las peticiones.
-* `app/Models/`: contiene los modelos de Eloquent y la representación de los datos.
-* `database/`: contiene las migraciones y seeders de la base de datos.
-* `public/`: punto de entrada público de la aplicación.
-* `resources/views/`: contiene las vistas Blade de la aplicación.
-* `resources/css/`: contiene los estilos CSS y la configuración de Tailwind.
-* `resources/js/`: contiene los recursos JavaScript.
-* `routes/`: contiene la definición de las rutas de la aplicación. `web.php` define las rutas que devuelven vistas Blade, y `api.php` define las rutas que devuelven respuestas JSON.
-* `storage/`: contiene archivos generados por Laravel, logs y otros recursos.
-* `vendor/`: contiene las dependencias instaladas mediante Composer.
-* `.env`: contiene la configuración específica del entorno, como las credenciales de la base de datos.
-* `artisan`: herramienta de línea de comandos de Laravel.
-
-# Tailwind CSS
-
-El proyecto utiliza **Tailwind CSS** para los estilos de la interfaz.
-
-Los estilos se encuentran principalmente en:
-
-```text
-resources/css/app.css
-```
-
-Para que Tailwind compile los estilos y detecte los cambios realizados en las vistas Blade, es necesario ejecutar:
+## Comandos útiles
 
 ```bash
-npm run dev
+php artisan route:list --path=api
+php artisan migrate:status
+php artisan db:seed
+php artisan config:clear
+php artisan cache:clear
 ```
-
-Por lo tanto, durante el desarrollo normalmente se deben tener dos procesos ejecutándose:
-
-```bash
-php artisan serve
-```
-
-y, en otra terminal:
-
-```bash
-npm run dev
-```
-
-# Ejemplo de salida
-
-Al acceder a `/productos` desde el navegador, la aplicación muestra el listado de productos junto con la información correspondiente, como su categoría y precio. Desde esta sección también se pueden realizar las operaciones de creación, edición y eliminación de productos.
-
-Al consumir las rutas bajo `/api`, la aplicación devuelve la información en formato JSON. Por ejemplo, al hacer `GET /api/productos` se obtiene el listado de productos junto con su categoría asociada.
