@@ -34,13 +34,14 @@ class VerificarPropietarioCarrito
             ], 403);
         }
 
-        $carritoId = $request->route('carrito')
-            ?? $request->route('carrito_id')
-            ?? $request->input('carrito_id');
+        $carrito = $request->route('carrito');
+        $carritoId = $request->route('carrito_id') ?? $request->input('carrito_id');
 
-        if ($carritoId) {
+        if (! $carrito instanceof Carrito && $carritoId) {
             $carrito = Carrito::find($carritoId);
+        }
 
+        if ($carritoId || $carrito instanceof Carrito) {
             if (! $carrito || (int) $carrito->usuario_id !== (int) $user->getAuthIdentifier()) {
                 return response()->json([
                     'message' => 'Este carrito no pertenece al usuario autenticado.',

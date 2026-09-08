@@ -73,6 +73,7 @@ Las pruebas Feature verifican flujos completos HTTP, incluyendo validación, aut
 * `AutenticacionYCarritoTest` comprueba que el registro emita un JWT, almacene la contraseña con bcrypt y cree un único carrito para el usuario.
 * `StockDelCarritoTest` comprueba que no se pueda agregar ni actualizar un item por encima del stock disponible.
 * `AutenticacionJwtTest` comprueba login exitoso, rechazo de rutas protegidas sin token y acceso permitido con un JWT válido.
+* `MiddlewareSeguridadTest` verifica respuestas `401` sin token o con JWT inválido y `403` al intentar usar el carrito de otro usuario.
 * `FlujoProductoCarritoTest` cubre el alta de producto, el agregado al carrito y la eliminación del item.
 * `CheckoutTest` cubre el checkout completo, la creación de la compra, el descuento de stock y el vaciado del carrito.
 
