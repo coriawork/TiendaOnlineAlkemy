@@ -14,7 +14,7 @@ it('crea un producto, lo agrega al carrito y permite eliminarlo', function () {
 
     $token = $registro->json('token');
     $carritoId = Carrito::where('usuario_id', $registro->json('user.id'))->value('id');
-    $categoria = Categoria::create(['nombre' => 'Accesorios']);
+    $categoria = Categoria::factory()->create(['nombre' => 'Accesorios']);
 
     $this->postJson('/api/productos', [
         'categoria_id' => $categoria->id,

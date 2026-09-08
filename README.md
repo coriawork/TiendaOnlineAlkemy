@@ -38,6 +38,21 @@ La configuración se encuentra en `phpunit.xml`:
 * `RefreshDatabase` reinicia el esquema antes de cada prueba Feature, por lo que cada caso es independiente.
 * `BCRYPT_ROUNDS=4` acelera las pruebas sin cambiar la configuración bcrypt de producción.
 
+Los datos relacionados se generan con factories de Laravel:
+
+* `Usuario::factory()` crea usuarios con contraseña bcrypt y un carrito asociado.
+* `Categoria::factory()` crea categorías con nombre y descripción.
+* `Producto::factory()` crea productos relacionados con una categoría.
+* `Producto::factory()->sinStock()` y `Producto::factory()->conStock(10)` permiten preparar escenarios de stock.
+
+El seeder `DatosPruebaSeeder` combina estas factories para crear categorías, productos y usuarios consistentes. Se ejecuta automáticamente antes de cada Feature test y también puede ejecutarse manualmente con:
+
+```bash
+php artisan db:seed --class=DatosPruebaSeeder
+```
+
+El seeder se ejecuta sobre la base configurada para el entorno activo. En testing, `RefreshDatabase` usa SQLite en memoria, por lo que estos datos se descartan al terminar cada prueba.
+
 Ejecutar toda la suite:
 
 ```bash

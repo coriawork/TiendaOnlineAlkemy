@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Carrito;
-use App\Models\Categoria;
 use App\Models\Producto;
 
 it('rechaza cantidades que superan el stock al agregar o actualizar un item', function () {
@@ -13,14 +12,12 @@ it('rechaza cantidades que superan el stock al agregar o actualizar un item', fu
 
     $token = $registro->json('token');
     $carritoId = Carrito::where('usuario_id', $registro->json('user.id'))->value('id');
-    $categoria = Categoria::create(['nombre' => 'Pruebas']);
-    $producto = Producto::create([
-        'categoria_id' => $categoria->id,
-        'nombre' => 'Producto limitado',
-        'descripcion' => 'Producto para probar stock',
-        'precio' => 100,
-        'stock' => 1,
-    ]);
+    $producto = Producto::factory()
+        ->conStock(1)
+        ->create([
+            'nombre' => 'Producto limitado',
+            'precio' => 100,
+        ]);
 
     $this->withToken($token)
         ->postJson('/api/items', [

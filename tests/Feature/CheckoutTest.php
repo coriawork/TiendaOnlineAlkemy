@@ -16,14 +16,14 @@ it('ejecuta el checkout, registra la compra, descuenta stock y vacía el carrito
     $token = $registro->json('token');
     $usuarioId = $registro->json('user.id');
     $carritoId = Carrito::where('usuario_id', $usuarioId)->value('id');
-    $categoria = Categoria::create(['nombre' => 'Hogar']);
-    $producto = Producto::create([
-        'categoria_id' => $categoria->id,
-        'nombre' => 'Lámpara de prueba',
-        'descripcion' => 'Producto para checkout',
-        'precio' => 1500,
-        'stock' => 5,
-    ]);
+    $categoria = Categoria::factory()->create(['nombre' => 'Hogar']);
+    $producto = Producto::factory()
+        ->for($categoria, 'categoria')
+        ->create([
+            'nombre' => 'Lámpara de prueba',
+            'precio' => 1500,
+            'stock' => 5,
+        ]);
 
     $this->withToken($token)
         ->postJson('/api/items', [

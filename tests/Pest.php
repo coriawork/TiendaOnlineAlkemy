@@ -1,5 +1,6 @@
 <?php
 
+use Database\Seeders\DatosPruebaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -16,6 +17,9 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
+    ->beforeEach(function (): void {
+        $this->seed(DatosPruebaSeeder::class);
+    })
     ->in('Feature');
 
 /*
