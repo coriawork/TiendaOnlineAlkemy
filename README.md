@@ -78,6 +78,12 @@ Las pruebas Feature verifican flujos completos HTTP, incluyendo validación, aut
 
 Las pruebas Unit de `ReglasDeNegocioTest` cubren el redondeo del resumen de checkout, el límite máximo de precio, el ocultamiento de contraseñas y el casteo del stock.
 
+## Mocking de dependencias externas
+
+El proyecto no realiza llamadas HTTP, pagos ni envíos de correo externos actualmente. Para aislar la lógica del controlador de la dependencia JWT, `AuthControllerTest` simula `JWTAuth::attempt()` con Mockery y devuelve un token de prueba. Así se verifica el contrato del controlador sin depender de la firma criptográfica real.
+
+Los Feature tests continúan usando JWT real para validar la integración completa de login, middleware y rutas protegidas. Esta combinación permite que los Unit tests sean rápidos y deterministas, mientras que los Feature tests comprueban el comportamiento real de la API.
+
 Las pruebas Unit se reservan para reglas o clases aisladas. Esta separación ayuda a localizar fallos: una prueba Unit suele señalar un problema de lógica puntual, mientras que una prueba Feature detecta errores en la integración entre rutas, middleware, controladores, modelos y base de datos.
 
 ## Ejecutar el proyecto
